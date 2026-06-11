@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { StyledSelect } from "@/components/ui/StyledSelect";
+import { kepengurusanService } from "@/services/kepengurusan.service";
+import { KepengurusanPayload } from "@/types/kepengurusan";
 
 interface Pengurus {
   id: string; // temporary unique id for rendering
@@ -17,16 +19,20 @@ interface Pengurus {
 }
 
 const JABATAN_OPTIONS = [
-  "Ketua",
-  "Wakil Ketua",
+  "Pastor Paroki",
+  "Ketua DPP",
+  "Wakil Ketua DPP",
   "Sekretaris",
   "Bendahara",
-  "Seksi Liturgi",
-  "Seksi Katekese",
-  "Seksi Sosial Ekonomi",
-  "Seksi Kepemudaan",
-  "Seksi Hubungan Masyarakat",
-  "Anggota Seksi"
+  "Bidang Liturgi (Pengudusan)",
+  "Bidang Pewartaan (Kerygma)",
+  "Bidang Persekutuan (Koinonia)",
+  "Bidang Pelayanan (Diakonia)",
+  "Bidang Kesaksian (Martiria)",
+  "Dewan Keuangan Paroki (DKP)",
+  "Koordinator Wilayah (Korwil)",
+  "Ketua KBG",
+  "Pengurus Tingkat Basis"
 ];
 
 // Helper untuk men-generate array tahun
@@ -42,6 +48,7 @@ const getYearOptions = () => {
 export default function KepengurusanKBGPage() {
   const [periodeMulai, setPeriodeMulai] = useState(new Date().getFullYear().toString());
   const [periodeSelesai, setPeriodeSelesai] = useState((new Date().getFullYear() + 3).toString());
+  const [skFile, setSkFile] = useState<File | null>(null);
   
   const [daftarPengurus, setDaftarPengurus] = useState<Pengurus[]>([
     { id: crypto.randomUUID(), jabatan: "Ketua", nama: "", telepon: "" }
@@ -65,10 +72,32 @@ export default function KepengurusanKBGPage() {
     ));
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement API integration here
-    alert("Data berhasil diproses! (Mode Tampilan UI)");
+    setIsLoading(true);
+
+    try {
+      const payload: KepengurusanPayload = {
+        kbg_id: null, // TODO: Ambil dari konteks/user saat ini
+        periode_mulai: periodeMulai,
+        periode_selesai: periodeSelesai,
+        pengurus: daftarPengurus.map(p => ({
+          jabatan: p.jabatan,
+          nama: p.nama,
+          telepon: p.telepon
+        }))
+      };
+
+      await kepengurusanService.sync(payload, skFile);
+      alert("Struktur Kepengurusan berhasil dikirim ke Karantina Paroki!");
+    } catch (error: any) {
+      console.error(error);
+      alert(error.message || "Terjadi kesalahan saat menghubungi server.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const yearOptions = getYearOptions();
@@ -88,10 +117,11 @@ export default function KepengurusanKBGPage() {
         <div>
           <Button
             onClick={handleSave}
-            className="bg-brown-600 hover:bg-brown-700 text-white shadow-md shadow-brown-900/20 px-6 h-11"
+            disabled={isLoading}
+            className="bg-brown-600 hover:bg-brown-700 text-white shadow-md shadow-brown-900/20 px-6 h-11 disabled:opacity-50"
           >
             <Save className="h-4 w-4 mr-2" />
-            Simpan Struktur
+            {isLoading ? "Mengirim..." : "Simpan Struktur"}
           </Button>
         </div>
       </div>
@@ -126,6 +156,33 @@ export default function KepengurusanKBGPage() {
                 placeholder="Pilih Tahun"
                 icon={Calendar}
               />
+            </div>
+          </div>
+          
+          <div className="px-6 pb-6 pt-2">
+            <div className="bg-blue-50/50 border border-blue-100 rounded-lg p-5">
+              <Label className="text-xs font-bold text-blue-800 uppercase tracking-wider mb-3 block flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                Bukti Verifikasi (Opsional)
+              </Label>
+              <div className="relative group">
+                <Input 
+                  type="file" 
+                  accept=".pdf,image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) setSkFile(file);
+                  }}
+                  className="h-12 bg-white hover:bg-slate-50 border-blue-200 focus:border-blue-500 rounded-md text-[15px] font-medium transition-all file:bg-blue-100 file:text-blue-700 file:border-0 file:rounded-md file:px-4 file:py-1 file:mr-4 file:text-sm file:font-semibold cursor-pointer"
+                />
+                {skFile && (
+                  <p className="text-xs text-green-600 mt-2 font-medium flex items-center">
+                    <span className="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
+                    File dilampirkan: {skFile.name}
+                  </p>
+                )}
+                <p className="text-[11px] text-blue-600/70 mt-2 font-medium">Unggah Surat Keputusan (SK) Pengangkatan yang ditandatangani Pastor Paroki untuk memvalidasi kepengurusan ini.</p>
+              </div>
             </div>
           </div>
         </div>

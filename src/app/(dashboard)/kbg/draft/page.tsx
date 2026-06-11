@@ -61,8 +61,8 @@ export default function DraftPage() {
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
                 {drafts.map((draft) => {
-                  const kepalaKeluarga = draft.data?.anggota?.find((a: any) => a.status_keluarga === "Kepala Keluarga")?.nama_lengkap 
-                    || draft.data?.anggota?.[0]?.nama_lengkap 
+                  const kepalaKeluarga = draft.data?.members?.find((a: any) => a.status_keluarga === "Kepala Keluarga")?.nama_lengkap 
+                    || draft.data?.members?.[0]?.nama_lengkap 
                     || "-";
                     
                   const dateStr = new Date(draft.createdAt).toLocaleString("id-ID", {
@@ -75,7 +75,7 @@ export default function DraftPage() {
                       <td className="p-4 text-slate-600">{kepalaKeluarga}</td>
                       <td className="p-4 text-slate-600">
                         <span className="bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full font-semibold">
-                          {draft.data.anggota?.length || 0} Orang
+                          {draft.data.members?.length || 0} Orang
                         </span>
                       </td>
                       <td className="p-4 text-slate-500">{dateStr}</td>

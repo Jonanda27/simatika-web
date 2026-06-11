@@ -111,6 +111,17 @@ export default function VerifikasiPage() {
     }
   };
 
+  const filteredData = data.filter((item) => {
+    if (activeTab === 'PENDING') {
+      if (userRole === 'ADMIN_PAROKI') {
+        return item.payload_data?.type === 'KEPENGURUSAN';
+      } else {
+        return item.payload_data?.type !== 'KEPENGURUSAN';
+      }
+    }
+    return true;
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -132,27 +143,25 @@ export default function VerifikasiPage() {
       <Card className="border-slate-200 shadow-md rounded-xl overflow-hidden">
         <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4">
           <div className="flex space-x-6">
-            {userRole !== 'ADMIN_PAROKI' && (
-              <button
-                onClick={() => setActiveTab('PENDING')}
-                className={`text-sm font-bold pb-4 -mb-4 border-b-2 transition-colors ${activeTab === 'PENDING' ? 'border-brown-600 text-brown-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-              >
-                Menunggu Stasi {activeTab === 'PENDING' && data.length > 0 && `(${data.length})`}
-              </button>
-            )}
+            <button
+              onClick={() => setActiveTab('PENDING')}
+              className={`text-sm font-bold pb-4 -mb-4 border-b-2 transition-colors ${activeTab === 'PENDING' ? 'border-brown-600 text-brown-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+            >
+              {userRole === 'ADMIN_PAROKI' ? 'Antrean Kepengurusan' : 'Menunggu Stasi'} {activeTab === 'PENDING' && filteredData.length > 0 && `(${filteredData.length})`}
+            </button>
             {userRole === 'ADMIN_PAROKI' && (
               <button
                 onClick={() => setActiveTab('VERIFIED_STASI')}
                 className={`text-sm font-bold pb-4 -mb-4 border-b-2 transition-colors ${activeTab === 'VERIFIED_STASI' ? 'border-brown-600 text-brown-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
               >
-                Telah Diverifikasi Stasi {activeTab === 'VERIFIED_STASI' && data.length > 0 && `(${data.length})`}
+                Telah Diverifikasi Stasi {activeTab === 'VERIFIED_STASI' && filteredData.length > 0 && `(${filteredData.length})`}
               </button>
             )}
             <button
               onClick={() => setActiveTab('APPROVED_PAROKI')}
               className={`text-sm font-bold pb-4 -mb-4 border-b-2 transition-colors ${activeTab === 'APPROVED_PAROKI' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
             >
-              Riwayat Disetujui Paroki {activeTab === 'APPROVED_PAROKI' && data.length > 0 && `(${data.length})`}
+              Riwayat Disetujui Paroki {activeTab === 'APPROVED_PAROKI' && filteredData.length > 0 && `(${filteredData.length})`}
             </button>
           </div>
         </CardHeader>
@@ -162,7 +171,7 @@ export default function VerifikasiPage() {
               <div className="w-8 h-8 border-4 border-brown-200 border-t-brown-600 rounded-full animate-spin mb-4"></div>
               Memuat data antrean...
             </div>
-          ) : data.length === 0 ? (
+          ) : filteredData.length === 0 ? (
             <div className="p-16 text-center">
               <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-8 h-8 text-slate-400" />
@@ -172,15 +181,22 @@ export default function VerifikasiPage() {
             </div>
           ) : (
             <div className="divide-y divide-slate-200/60">
-              {data.map((item) => (
+              {filteredData.map((item) => (
                 <div key={item.id} className="p-4 sm:p-6 hover:bg-slate-100/60 transition-colors flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 group">
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-full bg-brown-100 flex items-center justify-center flex-shrink-0">
-                      <Home className="w-6 h-6 text-brown-600" />
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${item.payload_data.type === 'KEPENGURUSAN' ? 'bg-blue-100' : 'bg-brown-100'}`}>
+                      {item.payload_data.type === 'KEPENGURUSAN' ? (
+                        <Users className="w-6 h-6 text-blue-600" />
+                      ) : (
+                        <Home className="w-6 h-6 text-brown-600" />
+                      )}
                     </div>
                     <div>
                       <h4 className="text-base font-bold text-slate-900 capitalize lowercase">
-                        Keluarga {item.payload_data.members?.[0]?.nama_lengkap || 'Tanpa Nama'}
+                        {item.payload_data.type === 'KEPENGURUSAN' 
+                          ? `SK Pengurus KBG (Periode ${item.payload_data.periode_mulai})`
+                          : `Keluarga ${item.payload_data.members?.[0]?.nama_lengkap || 'Tanpa Nama'}`
+                        }
                       </h4>
                       <div className="flex flex-wrap items-center gap-2 mt-2 text-xs font-medium text-slate-600">
                         <span className="flex items-center gap-1.5 bg-brown-50 px-2.5 py-1 rounded-full border border-brown-100 text-brown-700">
@@ -188,7 +204,11 @@ export default function VerifikasiPage() {
                           Penginput: <span className="capitalize lowercase">{item.User?.username || 'Sistem'}</span>
                         </span>
                         <span className="flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200/60 text-slate-600">
-                          <Users className="w-3.5 h-3.5 text-slate-400" /> {item.payload_data.members?.length || 0} Anggota
+                          <Users className="w-3.5 h-3.5 text-slate-400" /> 
+                          {item.payload_data.type === 'KEPENGURUSAN' 
+                            ? `${item.payload_data.pengurus?.length || 0} Pengurus`
+                            : `${item.payload_data.members?.length || 0} Anggota`
+                          }
                         </span>
                         <span className="flex items-center gap-1.5 text-slate-400 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100">
                           Dikirim: {format(new Date(item.createdAt), 'dd MMM yyyy HH:mm')}
