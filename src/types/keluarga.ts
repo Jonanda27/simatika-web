@@ -1,3 +1,4 @@
+// src/types/keluarga.ts
 export interface KeluargaAnggota {
   id: string;
   nama_lengkap: string;
@@ -9,6 +10,7 @@ export interface KeluargaAnggota {
   pendidikan_terakhir?: string | null;
   suku?: string | null;
   status_kesehatan?: string | null;
+  Sacraments?: any[]; // PERBAIKAN: Menambahkan dukungan array Sakramen untuk GIS
 }
 
 export interface KeluargaData {
