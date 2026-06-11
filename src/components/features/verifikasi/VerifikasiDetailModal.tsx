@@ -60,39 +60,68 @@ export function VerifikasiDetailModal({
                   {selectedItem.status === 'PENDING' ? 'Verifikasi Stasi' : 'Approval Paroki'}
                 </Badge>
                 <h2 className="text-xl font-bold text-slate-900 leading-tight">
-                  Kel. {selectedItem.payload_data.members?.[0]?.nama_lengkap || 'Tanpa Nama'}
+                  {selectedItem.payload_data.type === 'KEPENGURUSAN' 
+                    ? `SK Pengurus KBG`
+                    : `Kel. ${selectedItem.payload_data.members?.[0]?.nama_lengkap || 'Tanpa Nama'}`
+                  }
                 </h2>
-                <p className="text-sm text-slate-500 mt-1">{selectedItem.payload_data.kbg_id ? 'Terkoneksi KBG' : 'Luar KBG'}</p>
+                <p className="text-sm text-slate-500 mt-1">
+                  {selectedItem.payload_data.type === 'KEPENGURUSAN' 
+                    ? `Periode ${selectedItem.payload_data.periode_mulai} - ${selectedItem.payload_data.periode_selesai}`
+                    : (selectedItem.payload_data.kbg_id ? 'Terkoneksi KBG' : 'Luar KBG')}
+                </p>
               </div>
               
               <div className="flex-1 overflow-y-auto p-4 space-y-1">
-                <button 
-                  onClick={() => setActiveModalSection('ringkasan')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeModalSection === 'ringkasan' ? 'bg-brown-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}`}
-                >
-                  <AlertCircle className="w-4 h-4" /> Ringkasan
-                </button>
-                <button 
-                  onClick={() => setActiveModalSection('rumah')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeModalSection === 'rumah' ? 'bg-brown-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}`}
-                >
-                  <Home className="w-4 h-4" /> Ekonomi & Rumah
-                </button>
-                <button 
-                  onClick={() => setActiveModalSection('lokasi')}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeModalSection === 'lokasi' ? 'bg-brown-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}`}
-                >
-                  <MapPin className="w-4 h-4" /> Lokasi & Foto
-                </button>
-                <button 
-                  onClick={() => setActiveModalSection('anggota')}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeModalSection === 'anggota' ? 'bg-brown-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}`}
-                >
-                  <div className="flex items-center gap-3"><Users className="w-4 h-4" /> Anggota</div>
-                  <Badge variant="secondary" className={`${activeModalSection === 'anggota' ? 'bg-brown-500 text-white' : 'bg-slate-200 text-slate-700'}`}>
-                    {selectedItem.payload_data.members?.length || 0}
-                  </Badge>
-                </button>
+                {selectedItem.payload_data.type === 'KEPENGURUSAN' ? (
+                  <>
+                    <button 
+                      onClick={() => setActiveModalSection('ringkasan')}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeModalSection === 'ringkasan' ? 'bg-brown-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}`}
+                    >
+                      <AlertCircle className="w-4 h-4" /> Ringkasan SK
+                    </button>
+                    <button 
+                      onClick={() => setActiveModalSection('anggota')}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeModalSection === 'anggota' ? 'bg-brown-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}`}
+                    >
+                      <div className="flex items-center gap-3"><Users className="w-4 h-4" /> Susunan Pengurus</div>
+                      <Badge variant="secondary" className={`${activeModalSection === 'anggota' ? 'bg-brown-500 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                        {selectedItem.payload_data.pengurus?.length || 0}
+                      </Badge>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button 
+                      onClick={() => setActiveModalSection('ringkasan')}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeModalSection === 'ringkasan' ? 'bg-brown-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}`}
+                    >
+                      <AlertCircle className="w-4 h-4" /> Ringkasan
+                    </button>
+                    <button 
+                      onClick={() => setActiveModalSection('rumah')}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeModalSection === 'rumah' ? 'bg-brown-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}`}
+                    >
+                      <Home className="w-4 h-4" /> Ekonomi & Rumah
+                    </button>
+                    <button 
+                      onClick={() => setActiveModalSection('lokasi')}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeModalSection === 'lokasi' ? 'bg-brown-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}`}
+                    >
+                      <MapPin className="w-4 h-4" /> Lokasi & Foto
+                    </button>
+                    <button 
+                      onClick={() => setActiveModalSection('anggota')}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeModalSection === 'anggota' ? 'bg-brown-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}`}
+                    >
+                      <div className="flex items-center gap-3"><Users className="w-4 h-4" /> Anggota</div>
+                      <Badge variant="secondary" className={`${activeModalSection === 'anggota' ? 'bg-brown-500 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                        {selectedItem.payload_data.members?.length || 0}
+                      </Badge>
+                    </button>
+                  </>
+                )}
               </div>
               
               <div className="p-4 border-t border-slate-200 bg-slate-100/50">
@@ -118,26 +147,67 @@ export function VerifikasiDetailModal({
                   <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <div>
                       <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Ringkasan Data</h3>
-                      <p className="text-slate-500 mt-1">Tinjauan cepat informasi keluarga.</p>
+                      <p className="text-slate-500 mt-1">
+                        {selectedItem.payload_data.type === 'KEPENGURUSAN' 
+                          ? 'Tinjauan struktur pengurus KBG.' 
+                          : 'Tinjauan cepat informasi keluarga.'}
+                      </p>
                     </div>
                     
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="p-5 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-sm">
-                        <Users className="w-8 h-8 text-brown-500 mb-3" />
-                        <div className="text-3xl font-black text-slate-800">{selectedItem.payload_data.members?.length || 0}</div>
-                        <div className="text-sm font-medium text-slate-500 mt-1">Total Anggota Keluarga</div>
-                      </div>
-                      <div className="p-5 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-sm">
-                        <Home className="w-8 h-8 text-emerald-500 mb-3" />
-                        <div className="text-3xl font-black text-slate-800 capitalize">{selectedItem.payload_data.status_rumah || '-'}</div>
-                        <div className="text-sm font-medium text-slate-500 mt-1">Status Kepemilikan Rumah</div>
-                      </div>
-                    </div>
+                    {selectedItem.payload_data.type === 'KEPENGURUSAN' ? (
+                      <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="p-5 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-sm">
+                            <Users className="w-8 h-8 text-brown-500 mb-3" />
+                            <div className="text-3xl font-black text-slate-800">{selectedItem.payload_data.pengurus?.length || 0}</div>
+                            <div className="text-sm font-medium text-slate-500 mt-1">Total Pengurus</div>
+                          </div>
+                          <div className="p-5 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-sm">
+                            <CheckCircle className="w-8 h-8 text-emerald-500 mb-3" />
+                            <div className="text-3xl font-black text-slate-800">{selectedItem.payload_data.periode_mulai}</div>
+                            <div className="text-sm font-medium text-slate-500 mt-1">Tahun Mulai Menjabat</div>
+                          </div>
+                        </div>
 
-                    <div className="bg-brown-50 border border-brown-200 p-5 rounded-2xl text-brown-900 leading-relaxed">
-                      <strong>Tugas Anda:</strong> Mohon periksa keabsahan foto rumah, kelengkapan surat sakramen pada setiap anggota keluarga, dan validitas domisili sebelum melakukan persetujuan.
-                      {userRole === 'ADMIN_PAROKI' && " Data ini telah lolos verifikasi dari Admin Stasi."}
-                    </div>
+                        {selectedItem.payload_data.sk_url ? (
+                          <div className="bg-blue-50 border border-blue-200 p-5 rounded-2xl text-blue-900 leading-relaxed flex flex-col items-center">
+                            <div className="font-bold mb-3 flex items-center gap-2">
+                              <AlertCircle className="w-5 h-5 text-blue-600" /> Dokumen SK Terlampir
+                            </div>
+                            <a href={selectedItem.payload_data.sk_url} target="_blank" rel="noreferrer" className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                              Lihat SK Pengangkatan
+                            </a>
+                          </div>
+                        ) : (
+                          <div className="bg-amber-50 border border-amber-200 p-5 rounded-2xl text-amber-900 leading-relaxed flex items-center gap-3">
+                            <AlertCircle className="w-6 h-6 text-amber-600 shrink-0" />
+                            <div>
+                              <strong>Peringatan:</strong> Tidak ada file SK Pengangkatan yang dilampirkan. Pastikan struktur ini memang sah sebelum menyetujuinya.
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="p-5 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-sm">
+                            <Users className="w-8 h-8 text-brown-500 mb-3" />
+                            <div className="text-3xl font-black text-slate-800">{selectedItem.payload_data.members?.length || 0}</div>
+                            <div className="text-sm font-medium text-slate-500 mt-1">Total Anggota Keluarga</div>
+                          </div>
+                          <div className="p-5 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-sm">
+                            <Home className="w-8 h-8 text-emerald-500 mb-3" />
+                            <div className="text-3xl font-black text-slate-800 capitalize">{selectedItem.payload_data.status_rumah || '-'}</div>
+                            <div className="text-sm font-medium text-slate-500 mt-1">Status Kepemilikan Rumah</div>
+                          </div>
+                        </div>
+
+                        <div className="bg-brown-50 border border-brown-200 p-5 rounded-2xl text-brown-900 leading-relaxed">
+                          <strong>Tugas Anda:</strong> Mohon periksa keabsahan foto rumah, kelengkapan surat sakramen pada setiap anggota keluarga, dan validitas domisili sebelum melakukan persetujuan.
+                          {userRole === 'ADMIN_PAROKI' && " Data ini telah lolos verifikasi dari Admin Stasi."}
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -240,7 +310,21 @@ export function VerifikasiDetailModal({
                     </div>
 
                     <div className="space-y-4">
-                      {selectedItem.payload_data.members?.map((m: any, i: number) => (
+                      {selectedItem.payload_data.type === 'KEPENGURUSAN' ? (
+                        selectedItem.payload_data.pengurus?.map((p: any, i: number) => (
+                          <div key={i} className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm p-5 flex flex-col sm:flex-row justify-between gap-4">
+                            <div>
+                              <h4 className="text-lg font-bold text-slate-900">{p.nama}</h4>
+                              <p className="text-sm text-slate-500 mt-1 font-medium">{p.jabatan}</p>
+                            </div>
+                            <div className="flex items-center gap-2 text-slate-600 bg-slate-50 px-4 py-2 rounded-lg border border-slate-100">
+                              <User className="w-4 h-4" />
+                              <span className="text-sm font-medium">{p.telepon || 'Tidak ada no. telp'}</span>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        selectedItem.payload_data.members?.map((m: any, i: number) => (
                         <div key={i} className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                           <div className={`h-2 w-full ${m.status_dalam_keluarga === 'KK' ? 'bg-brown-500' : 'bg-slate-200'}`}></div>
                           <div className="p-5 sm:p-6">
@@ -350,7 +434,7 @@ export function VerifikasiDetailModal({
                             )}
                           </div>
                         </div>
-                      ))}
+                      )))}
                     </div>
                   </div>
                 )}
@@ -399,7 +483,7 @@ export function VerifikasiDetailModal({
                   <div className="flex flex-col-reverse sm:flex-row w-full sm:w-auto gap-3">
                     <Button variant="ghost" onClick={() => onClose()} className="h-12 px-6 rounded-xl font-medium w-full sm:w-auto">Batalkan</Button>
                     
-                    {userRole !== 'ADMIN_PAROKI' && selectedItem?.status === 'PENDING' && (
+                    {userRole !== 'ADMIN_PAROKI' && selectedItem?.status === 'PENDING' && selectedItem.payload_data.type !== 'KEPENGURUSAN' && (
                       <Button 
                         onClick={onVerifyStasi}
                         disabled={actionLoading}
@@ -410,7 +494,7 @@ export function VerifikasiDetailModal({
                       </Button>
                     )}
 
-                    {userRole === 'ADMIN_PAROKI' && selectedItem?.status === 'VERIFIED_STASI' && (
+                    {userRole === 'ADMIN_PAROKI' && (selectedItem?.status === 'VERIFIED_STASI' || (selectedItem?.payload_data.type === 'KEPENGURUSAN' && selectedItem?.status === 'PENDING')) && (
                       <Button 
                         onClick={onApproveParoki}
                         disabled={actionLoading}
