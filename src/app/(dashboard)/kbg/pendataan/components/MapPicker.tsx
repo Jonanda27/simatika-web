@@ -42,15 +42,8 @@ export default function MapPicker({ initialLat, initialLng, onLocationSelect }: 
     setIsMounted(true);
     if (initialLat && initialLng) {
       setCenter([initialLat, initialLng]);
-    } else {
-      // Try to get user location
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => setCenter([pos.coords.latitude, pos.coords.longitude]),
-          () => {} // fallback to default
-        );
-      }
     }
+    // Jika tidak ada lokasi awal, biarkan di default Timika Sempan (-4.545, 136.885)
   }, [initialLat, initialLng]);
 
   if (!isMounted) return <div className="h-[300px] w-full bg-slate-100 animate-pulse rounded-xl flex items-center justify-center text-slate-400">Loading Map...</div>;
@@ -73,3 +66,4 @@ export default function MapPicker({ initialLat, initialLng, onLocationSelect }: 
     </div>
   );
 }
+

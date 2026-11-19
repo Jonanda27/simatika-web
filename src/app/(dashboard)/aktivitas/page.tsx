@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { 
-  Search, Eye, ChevronLeft, ChevronRight, Trash2, X, Activity, Church, Users, BookOpen
+  Search, Eye, ChevronLeft, ChevronRight, Trash2, X, Activity, Church, Users, BookOpen, Download
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,7 @@ export default function AktivitasPage() {
   const [frekuensiFilter, setFrekuensiFilter] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedAktivitas, setSelectedAktivitas] = useState<AktivitasData | null>(null);
+  const [exporting, setExporting] = useState(false);
   
   const [pagination, setPagination] = useState({ total: 0, totalPages: 1, currentPage: 1, limit: 15 });
 
@@ -58,6 +60,46 @@ export default function AktivitasPage() {
     setModalOpen(true);
   };
 
+  const handleExportExcel = async () => {
+    setExporting(true);
+    try {
+      const res = await aktivitasService.getAll(1, 10000, search, frekuensiFilter);
+      const allData = res.data;
+
+      if (!allData || allData.length === 0) {
+        alert("Tidak ada data untuk diexport");
+        return;
+      }
+
+      const excelData = allData.map((item, index) => {
+        return {
+          "No": index + 1,
+          "Nama Umat": item.Umat?.nama_lengkap || "-",
+          "Frekuensi Misa": item.frekuensi_misa || "-",
+          "Tugas Liturgi": item.petugas_liturgi || "-",
+          "Keaktifan Organisasi": item.keaktifan_organisasi || "-",
+          "Riwayat Kursus Pastoral": item.riwayat_kursus || "-",
+        };
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Aktivitas Pastoral");
+
+      const wscols = [
+        {wch: 5}, {wch: 30}, {wch: 20}, {wch: 30}, {wch: 30}, {wch: 40}
+      ];
+      worksheet['!cols'] = wscols;
+
+      XLSX.writeFile(workbook, `Aktivitas_Pastoral.xlsx`);
+    } catch (error) {
+      console.error("Gagal export excel:", error);
+      alert("Gagal melakukan export data");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const totalPages = pagination.totalPages;
   const curPage = pagination.currentPage;
 
@@ -74,39 +116,45 @@ export default function AktivitasPage() {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
-              <Activity className="w-4.5 h-4.5 text-emerald-600" />
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-none bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+              <Activity className="w-5 h-5 text-emerald-600" />
             </div>
             Aktivitas Pastoral
           </h2>
-          <p className="text-sm text-slate-500 mt-1 ml-[2.6rem]">
+          <p className="text-sm text-slate-500 mt-2 ml-[3.25rem] font-medium">
             Total <span className="font-bold text-slate-800">{pagination.total.toLocaleString('id-ID')}</span> rekam aktivitas umat tercatat.
           </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button onClick={handleExportExcel} variant="outline" className="rounded-none border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 transition-colors font-bold" disabled={exporting || loading}>
+            <Download className={`w-4 h-4 mr-2 ${exporting ? 'animate-bounce' : ''}`} />
+            {exporting ? 'Mengekspor...' : 'Export Excel'}
+          </Button>
         </div>
       </div>
 
       {/* MAIN CARD */}
-      <Card className="shadow-md border-slate-200 rounded-xl overflow-hidden">
+      <Card className="shadow-sm border-slate-200/80 rounded-none overflow-hidden bg-white">
         <CardContent className="p-0">
 
           {/* FILTER BAR */}
-          <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row gap-3 bg-white items-center">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row gap-4 bg-slate-50/50 rounded-none items-center">
+            <div className="relative flex-1 w-full max-w-sm">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-slate-400" />
               <input
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Cari nama umat..."
-                className="w-full pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow placeholder:text-slate-400"
+                className="w-full pl-10 pr-4 h-11 text-sm border border-slate-200 rounded-none bg-white shadow-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all placeholder:text-slate-400 font-medium"
               />
             </div>
             
             <select
               value={frekuensiFilter}
               onChange={(e) => setFrekuensiFilter(e.target.value)}
-              className="px-3 py-2.5 text-sm border border-slate-200 rounded-xl bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full sm:w-auto"
+              className="px-4 h-11 text-sm border border-slate-200 rounded-none bg-white shadow-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 w-full sm:w-auto font-medium"
             >
               <option value="">Semua Frekuensi Misa</option>
               <option value="Harian">Harian</option>
@@ -142,8 +190,8 @@ export default function AktivitasPage() {
                   Array.from({ length: 8 }).map((_, i) => (
                     <TableRow key={i}>
                       {Array.from({ length: 6 }).map((_, j) => (
-                        <TableCell key={j}>
-                          <div className="h-4 bg-slate-100 rounded animate-pulse" style={{ width: `${50 + Math.random() * 50}%` }} />
+                        <TableCell key={j} className="py-4">
+                          <div className="h-4 bg-slate-200/60 rounded-none animate-pulse" style={{ width: `${50 + Math.random() * 50}%` }} />
                         </TableCell>
                       ))}
                     </TableRow>
@@ -161,40 +209,40 @@ export default function AktivitasPage() {
                     const rowNum = (pagination.currentPage - 1) * pagination.limit + index + 1;
 
                     return (
-                      <TableRow key={a.id} className="hover:bg-slate-100/60 transition-colors group">
+                      <TableRow key={a.id} className="group hover:bg-transparent">
                         <TableCell className="text-slate-400 text-sm">{rowNum}</TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2.5">
-                            <span className="font-semibold text-slate-900 text-sm capitalize lowercase">{a.Umat?.nama_lengkap || '-'}</span>
-                          </div>
-                        </TableCell>
+                          <div className="flex items-center gap-3">
+                            <span className="font-bold text-slate-800 text-sm capitalize lowercase">{a.Umat?.nama_lengkap || '-'}</span>
+                          </div>                    
+               </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={`text-xs ${frekuensiColorMap[a.frekuensi_misa] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                          <Badge variant="outline" className={`text-xs rounded-none font-bold border-0 px-2 py-1 ${frekuensiColorMap[a.frekuensi_misa] || 'bg-slate-50 text-slate-600'}`}>
                             {a.frekuensi_misa}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-sm text-slate-600 truncate max-w-[150px]">
+                        <TableCell className="text-sm font-medium text-slate-600 truncate max-w-[150px]">
                           {a.petugas_liturgi || '-'}
                         </TableCell>
-                        <TableCell className="text-sm text-slate-600 truncate max-w-[150px]">
+                        <TableCell className="text-sm font-medium text-slate-600 truncate max-w-[150px]">
                           {a.keaktifan_organisasi || '-'}
                         </TableCell>
                         <TableCell className="text-center pr-4">
                           <div className="flex items-center justify-center gap-1">
                             <Button
-                              variant="ghost"
+                              variant="outline"
                               size="icon"
                               onClick={() => openDetail(a)}
                               title="Lihat Detail"
-                              className="h-8 w-8 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                              className="h-8 w-8 text-slate-500 hover:text-emerald-700 border-slate-200 hover:border-emerald-200 hover:bg-emerald-50 rounded-none transition-colors"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
                             <Button
-                              variant="ghost"
+                              variant="outline"
                               size="icon"
                               title="Hapus Data"
-                              className="h-8 w-8 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                              className="h-8 w-8 text-slate-500 hover:text-rose-700 border-slate-200 hover:border-rose-200 hover:bg-rose-50 rounded-none transition-colors"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -209,16 +257,15 @@ export default function AktivitasPage() {
           </div>
 
           {/* PAGINATION */}
-          <div className="p-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white">
-            <p className="text-sm text-slate-500">
-              Menampilkan{' '}
-              <span className="font-semibold text-slate-800">{list.length > 0 ? (curPage - 1) * pagination.limit + 1 : 0}</span>–
-              <span className="font-semibold text-slate-800">{Math.min(curPage * pagination.limit, pagination.total)}</span> dari{' '}
-              <span className="font-semibold text-slate-800">{pagination.total.toLocaleString('id-ID')}</span> data
+          <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/30 rounded-none">
+            <p className="text-sm text-slate-500 font-medium">
+              Menampilkan <span className="font-bold text-slate-800">{list.length > 0 ? (curPage - 1) * pagination.limit + 1 : 0}</span>–
+              <span className="font-bold text-slate-800">{Math.min(curPage * pagination.limit, pagination.total)}</span> dari{' '}
+              <span className="font-bold text-slate-800">{pagination.total.toLocaleString('id-ID')}</span> data
             </p>
 
             <div className="flex items-center gap-1">
-              <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg" disabled={curPage === 1 || loading} onClick={() => fetchData(curPage - 1)}>
+              <Button variant="outline" size="icon" className="h-9 w-9 rounded-none text-slate-600 border-slate-200 bg-white hover:bg-slate-50" disabled={curPage === 1 || loading} onClick={() => fetchData(curPage - 1)}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               {getPageNumbers().map((page) => (
@@ -226,14 +273,14 @@ export default function AktivitasPage() {
                   key={page}
                   variant={curPage === page ? 'default' : 'outline'}
                   size="icon"
-                  className={`h-8 w-8 rounded-lg text-xs font-medium ${curPage === page ? 'bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700' : ''}`}
+                  className={`h-9 w-9 rounded-none text-sm font-bold ${curPage === page ? 'bg-emerald-600 border-transparent text-white hover:bg-emerald-700' : 'text-slate-600 bg-white border-slate-200 hover:bg-slate-50'}`}
                   onClick={() => fetchData(page)}
                   disabled={loading}
                 >
                   {page}
                 </Button>
               ))}
-              <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg" disabled={curPage === totalPages || loading || totalPages === 0} onClick={() => fetchData(curPage + 1)}>
+              <Button variant="outline" size="icon" className="h-9 w-9 rounded-none text-slate-600 border-slate-200 bg-white hover:bg-slate-50" disabled={curPage === totalPages || loading || totalPages === 0} onClick={() => fetchData(curPage + 1)}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -251,3 +298,4 @@ export default function AktivitasPage() {
     </div>
   );
 }
+

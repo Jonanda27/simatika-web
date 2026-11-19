@@ -44,23 +44,8 @@ export default function MapPickerModal({ initialLat, initialLng, onClose, onSave
       shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
     });
 
-    // Auto detect location when modal opens
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const newPos: [number, number] = [pos.coords.latitude, pos.coords.longitude];
-          setCenter(newPos);
-          // If no initial location was provided, auto-set to current location
-          if (!initialLat || !initialLng) {
-            setSelectedPos(newPos);
-          }
-          setMapKey(prev => prev + 1); // Force map to recenter
-        },
-        (error) => {
-          console.warn("Geolocation failed:", error.message);
-        }
-      );
-    }
+    // Auto detect location when modal opens - DIHAPUS (Berdasarkan permintaan: Default selalu Timika Sempan)
+    // Hanya menggunakan koordinat default ([-4.545, 136.885]) jika tidak ada titik awal
     
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -165,3 +150,4 @@ export default function MapPickerModal({ initialLat, initialLng, onClose, onSave
     </>
   );
 }
+

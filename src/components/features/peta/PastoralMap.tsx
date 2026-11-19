@@ -7,8 +7,10 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 import { useGisUmatStore } from "@/store/useGisUmatStore";
+import { useAuth } from "@/context/AuthContext";
 import FamilyMarkerLayer from "./layers/FamilyMarkerLayer";
 import BoundaryMaskLayer from "./layers/BoundaryMaskLayer";
+import StasiMarkerLayer from "./layers/StasiMarkerLayer";
 
 // --- Fix Leaflet Default Icon Issue di Next.js menggunakan CDN ---
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -29,7 +31,8 @@ L.Icon.Default.mergeOptions({
  * Tujuannya agar HUD / Elemen UI lain tahu peta sedang di posisi mana.
  */
 function MapEventsTracker() {
-    const { setMapZoom, setMapCenter } = useGisUmatStore();
+    const setMapZoom = useGisUmatStore((state) => state.setMapZoom);
+    const setMapCenter = useGisUmatStore((state) => state.setMapCenter);
 
     useMapEvents({
         zoomend: (e) => {
@@ -85,7 +88,12 @@ function ExternalKameraController() {
 // ============================================================================
 
 export default function PastoralMap() {
-    const { activeBaseMap, mapOpacity } = useGisUmatStore();
+    const activeBaseMap = useGisUmatStore((state) => state.activeBaseMap);
+    const mapOpacity = useGisUmatStore((state) => state.mapOpacity);
+    const { user } = useAuth();
+
+    // Cek apakah user adalah admin stasi
+    const isStasi = user?.role && (user.role === 'ADMIN_STASI' || user.role === 'Admin Stasi' || user.role.includes('STASI'));
 
     // Resolusi Tile URL berdasarkan mode yang dipilih (Dark, Satellite, Street, OSM)
     const getTileUrl = () => {
@@ -124,8 +132,8 @@ export default function PastoralMap() {
                 {/* Masking Gelap Area Luar Paroki */}
                 <BoundaryMaskLayer />
 
-                {/* Lapisan Marker Titik Umat/Keluarga (Decoupled & Highly Cohesive) */}
-                <FamilyMarkerLayer />
+                {/* Render Hierarchical KBG Map jika user Stasi, jika bukan render peta Keluarga biasa */}
+                {isStasi ? <StasiMarkerLayer /> : <FamilyMarkerLayer />}
 
             </MapContainer>
         </div>

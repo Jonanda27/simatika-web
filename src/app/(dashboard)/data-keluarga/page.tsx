@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Search, Eye, ChevronLeft, ChevronRight, Trash2,
-  Home, Users, MapPin, ShieldCheck, X, Plus
+  Home, Users, MapPin, ShieldCheck, X, Plus, Download
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,9 @@ import { KeluargaData, KeluargaAnggota } from "@/types/keluarga";
 import { differenceInYears } from "date-fns";
 import { getKepalaKeluarga, statusRumahColor } from "@/components/features/keluarga/utils";
 import { KeluargaDetailModal } from "@/components/features/keluarga/KeluargaDetailModal";
+import { umatService } from "@/services/umat.service";
+import { UmatData } from "@/types/umat";
+import { UmatDetailModal } from "@/components/features/umat/UmatDetailModal";
 
 // ================== MAIN PAGE ==================
 export default function DataKeluargaPage() {
@@ -27,6 +31,9 @@ export default function DataKeluargaPage() {
   const [search, setSearch] = useState('');
   const [selectedKeluarga, setSelectedKeluarga] = useState<KeluargaData | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [selectedUmat, setSelectedUmat] = useState<UmatData | null>(null);
+  const [umatModalOpen, setUmatModalOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const searchTimeout = useRef<ReturnType<typeof setTimeout>>(null);
 
   const fetchData = useCallback(async (page = 1) => {
@@ -59,6 +66,57 @@ export default function DataKeluargaPage() {
     } catch (e) { console.error(e); }
   };
 
+  const handleUmatClick = async (id: string) => {
+    try {
+      const res = await umatService.getById(id);
+      setSelectedUmat(res.data);
+      setUmatModalOpen(true);
+    } catch (e) { console.error(e); }
+  };
+
+  const handleExportExcel = async () => {
+    setExporting(true);
+    try {
+      const res = await keluargaService.getAll({ page: 1, limit: 10000, search });
+      const allData = res.data;
+
+      if (!allData || allData.length === 0) {
+        alert("Tidak ada data untuk diexport");
+        return;
+      }
+
+      const excelData = allData.map((item, index) => {
+        const kepala = getKepalaKeluarga(item.Umats);
+        return {
+          "No": index + 1,
+          "No KK Paroki": item.no_kk_paroki || "-",
+          "Kode Unik Keluarga": item.kode_unik_keluarga || "-",
+          "Kepala Keluarga": kepala,
+          "KBG": item.Kbg?.nama_kbg || "-",
+          "Status Rumah": item.status_rumah || "-",
+          "Pendapatan/Bulan": item.pendapatan_per_bulan ? `Rp ${item.pendapatan_per_bulan.toLocaleString('id-ID')}` : "-",
+          "Jumlah Anggota": item.Umats?.length || 0,
+        };
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Data Keluarga");
+
+      const wscols = [
+        {wch: 5}, {wch: 25}, {wch: 20}, {wch: 30}, {wch: 20}, {wch: 20}, {wch: 20}, {wch: 15}
+      ];
+      worksheet['!cols'] = wscols;
+
+      XLSX.writeFile(workbook, `Data_Keluarga_Admin.xlsx`);
+    } catch (error) {
+      console.error("Gagal export excel:", error);
+      alert("Gagal melakukan export data");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const totalPages = pagination.totalPages;
   const curPage = pagination.currentPage;
 
@@ -75,32 +133,38 @@ export default function DataKeluargaPage() {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
-              <Home className="w-4.5 h-4.5 text-emerald-600" />
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-none bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+              <Home className="w-5 h-5 text-emerald-600" />
             </div>
             Data Keluarga
           </h2>
-          <p className="text-sm text-slate-500 mt-1 ml-[2.6rem]">
+          <p className="text-sm text-slate-500 mt-2 ml-[3.25rem] font-medium">
             Total <span className="font-bold text-slate-800">{pagination.total.toLocaleString('id-ID')}</span> keluarga Katolik terdaftar.
           </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button onClick={handleExportExcel} variant="outline" className="rounded-none border-emerald-200 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 transition-colors font-bold" disabled={exporting || loading}>
+            <Download className={`w-4 h-4 mr-2 ${exporting ? 'animate-bounce' : ''}`} />
+            {exporting ? 'Mengekspor...' : 'Export Excel'}
+          </Button>
         </div>
       </div>
 
       {/* MAIN CARD */}
-      <Card className="shadow-md border-slate-200 rounded-xl overflow-hidden">
+      <Card className="shadow-sm border-slate-200/80 rounded-none overflow-hidden bg-white">
         <CardContent className="p-0">
 
           {/* FILTER BAR */}
-          <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row gap-3 bg-white items-center">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row gap-4 bg-slate-50/50 rounded-none items-center">
+            <div className="relative flex-1 w-full max-w-sm">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-slate-400" />
               <input
                 type="text"
                 value={searchInput}
                 onChange={(e) => handleSearchInput(e.target.value)}
                 placeholder="Cari No. KK Paroki..."
-                className="w-full pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-shadow placeholder:text-slate-400"
+                className="w-full pl-10 pr-4 h-11 text-sm border border-slate-200 rounded-none bg-white shadow-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20 transition-all placeholder:text-slate-400 font-medium"
               />
             </div>
             {search && (
@@ -119,7 +183,7 @@ export default function DataKeluargaPage() {
               <TableHeader className="bg-slate-50/80 border-b border-slate-200">
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="w-[50px] font-bold text-slate-600 uppercase text-xs tracking-wider">No</TableHead>
-                  <TableHead className="font-bold text-slate-600 uppercase text-xs tracking-wider">No. KK Paroki</TableHead>
+                  <TableHead className="font-bold text-slate-600 uppercase text-xs tracking-wider">No. KK & Kode Unik</TableHead>
                   <TableHead className="font-bold text-slate-600 uppercase text-xs tracking-wider">Kepala Keluarga</TableHead>
                   <TableHead className="font-bold text-slate-600 uppercase text-xs tracking-wider text-center">Anggota</TableHead>
                   <TableHead className="font-bold text-slate-600 uppercase text-xs tracking-wider">Status Rumah</TableHead>
@@ -132,8 +196,8 @@ export default function DataKeluargaPage() {
                   Array.from({ length: 8 }).map((_, i) => (
                     <TableRow key={i}>
                       {Array.from({ length: 8 }).map((_, j) => (
-                        <TableCell key={j}>
-                          <div className="h-4 bg-slate-100 rounded animate-pulse" style={{ width: `${50 + Math.random() * 50}%` }} />
+                        <TableCell key={j} className="py-4">
+                          <div className="h-4 bg-slate-200/60 rounded-none animate-pulse" style={{ width: `${50 + Math.random() * 50}%` }} />
                         </TableCell>
                       ))}
                     </TableRow>
@@ -153,35 +217,40 @@ export default function DataKeluargaPage() {
                     const rowNum = (pagination.currentPage - 1) * pagination.limit + index + 1;
 
                     return (
-                      <TableRow key={kk.id} className="hover:bg-slate-100/60 transition-colors group">
+                      <TableRow key={kk.id} className="group hover:bg-transparent">
                         <TableCell className="text-slate-400 text-sm">{rowNum}</TableCell>
                         <TableCell>
-                          <span className="font-mono text-xs text-slate-700 bg-slate-100 px-2 py-1 rounded">
-                            {kk.no_kk_paroki || '-'}
-                          </span>
+                          <div className="flex flex-col gap-1">
+                            <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded-none border border-slate-200/60 w-fit" title="No. KK Paroki">
+                              {kk.no_kk_paroki || '-'}
+                            </span>
+                            <span className="font-mono text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-none border border-emerald-100 w-fit" title="Kode Unik Keluarga">
+                              {kk.kode_unik_keluarga || '-'}
+                            </span>
+                          </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center justify-center shrink-0">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-none bg-emerald-50 border border-emerald-100 text-emerald-700 font-bold text-xs flex items-center justify-center shrink-0">
                               {kepala.charAt(0)}
                             </div>
-                            <span className="font-semibold text-slate-900 text-sm capitalize lowercase">{kepala}</span>
+                            <span className="font-bold text-slate-800 text-sm capitalize lowercase">{kepala}</span>
                           </div>
                         </TableCell>
                         <TableCell className="text-center">
-                          <div className="inline-flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-full text-sm font-semibold text-slate-700">
-                            <Users className="w-3.5 h-3.5 text-slate-500" />
+                          <div className="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200/60 px-3 py-1 rounded-none text-sm font-bold text-slate-600">
+                            <Users className="w-3.5 h-3.5 text-slate-400" />
                             {jumlah}
                           </div>
                         </TableCell>
                         <TableCell>
                           {kk.status_rumah ? (
-                            <Badge variant="outline" className={`text-xs ${statusRumahColor[kk.status_rumah] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                            <Badge variant="outline" className={`text-xs rounded-none font-bold border-0 px-2 py-1 ${statusRumahColor[kk.status_rumah] || 'bg-slate-50 text-slate-600'}`}>
                               {kk.status_rumah}
                             </Badge>
-                          ) : <span className="text-slate-400 text-sm">-</span>}
+                          ) : <span className="text-slate-400 text-sm font-bold">-</span>}
                         </TableCell>
-                        <TableCell className="text-sm text-slate-700">
+                        <TableCell className="text-sm font-bold text-slate-700">
                           {kk.pendapatan_per_bulan
                             ? `Rp ${Number(kk.pendapatan_per_bulan).toLocaleString('id-ID')}`
                             : <span className="text-slate-400">-</span>}
@@ -189,19 +258,19 @@ export default function DataKeluargaPage() {
                         <TableCell className="text-center pr-4">
                           <div className="flex items-center justify-center gap-1">
                             <Button
-                              variant="ghost"
+                              variant="outline"
                               size="icon"
                               onClick={() => openDetail(kk)}
                               title="Lihat Detail"
-                              className="h-8 w-8 text-slate-400 hover:text-brown-600 hover:bg-brown-50 rounded-lg transition-colors"
+                              className="h-8 w-8 text-slate-500 hover:text-emerald-700 border-slate-200 hover:border-emerald-200 hover:bg-emerald-50 rounded-none transition-colors"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
                             <Button
-                              variant="ghost"
+                              variant="outline"
                               size="icon"
                               title="Hapus Data"
-                              className="h-8 w-8 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                              className="h-8 w-8 text-slate-500 hover:text-rose-700 border-slate-200 hover:border-rose-200 hover:bg-rose-50 rounded-none transition-colors"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -216,16 +285,15 @@ export default function DataKeluargaPage() {
           </div>
 
           {/* PAGINATION */}
-          <div className="p-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white">
-            <p className="text-sm text-slate-500">
-              Menampilkan{' '}
-              <span className="font-semibold text-slate-800">{list.length > 0 ? (curPage - 1) * pagination.limit + 1 : 0}</span>–
-              <span className="font-semibold text-slate-800">{Math.min(curPage * pagination.limit, pagination.total)}</span> dari{' '}
-              <span className="font-semibold text-slate-800">{pagination.total.toLocaleString('id-ID')}</span> keluarga
+          <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/30 rounded-none">
+            <p className="text-sm text-slate-500 font-medium">
+              Menampilkan <span className="font-bold text-slate-800">{list.length > 0 ? (curPage - 1) * pagination.limit + 1 : 0}</span>–
+              <span className="font-bold text-slate-800">{Math.min(curPage * pagination.limit, pagination.total)}</span> dari{' '}
+              <span className="font-bold text-slate-800">{pagination.total.toLocaleString('id-ID')}</span> keluarga
             </p>
 
             <div className="flex items-center gap-1">
-              <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg" disabled={curPage === 1 || loading} onClick={() => fetchData(curPage - 1)}>
+              <Button variant="outline" size="icon" className="h-9 w-9 rounded-none text-slate-600 border-slate-200 bg-white hover:bg-slate-50" disabled={curPage === 1 || loading} onClick={() => fetchData(curPage - 1)}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               {getPageNumbers().map((page) => (
@@ -233,14 +301,14 @@ export default function DataKeluargaPage() {
                   key={page}
                   variant={curPage === page ? 'default' : 'outline'}
                   size="icon"
-                  className={`h-8 w-8 rounded-lg text-xs font-medium ${curPage === page ? 'bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700' : ''}`}
+                  className={`h-9 w-9 rounded-none text-sm font-bold ${curPage === page ? 'bg-emerald-600 border-transparent text-white hover:bg-emerald-700' : 'text-slate-600 bg-white border-slate-200 hover:bg-slate-50'}`}
                   onClick={() => fetchData(page)}
                   disabled={loading}
                 >
                   {page}
                 </Button>
               ))}
-              <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg" disabled={curPage === totalPages || loading || totalPages === 0} onClick={() => fetchData(curPage + 1)}>
+              <Button variant="outline" size="icon" className="h-9 w-9 rounded-none text-slate-600 border-slate-200 bg-white hover:bg-slate-50" disabled={curPage === totalPages || loading || totalPages === 0} onClick={() => fetchData(curPage + 1)}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -249,12 +317,21 @@ export default function DataKeluargaPage() {
         </CardContent>
       </Card>
 
-      {/* DETAIL MODAL */}
+      {/* DETAIL MODAL KELUARGA */}
       <KeluargaDetailModal
         keluarga={selectedKeluarga}
         open={modalOpen}
         onClose={() => { setModalOpen(false); setSelectedKeluarga(null); }}
+        onUmatClick={handleUmatClick}
+      />
+
+      {/* DETAIL MODAL UMAT (Ditumpuk di atas) */}
+      <UmatDetailModal
+        umat={selectedUmat}
+        open={umatModalOpen}
+        onClose={() => { setUmatModalOpen(false); setSelectedUmat(null); }}
       />
     </div>
   );
 }
+

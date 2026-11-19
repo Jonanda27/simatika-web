@@ -6,6 +6,8 @@ import { X, Map as MapIcon } from "lucide-react";
 import { useGisUmatStore } from "@/store/useGisUmatStore";
 import { GisPanelType } from "@/types/gis";
 
+import KatalogWilayahPanel from "./KatalogWilayahPanel";
+import KatalogStasiPanel from "./KatalogStasiPanel";
 import KatalogKeluargaPanel from "./KatalogKeluargaPanel";
 import DetailKeluargaPanel from "./DetailKeluargaPanel";
 import BasemapLayerPanel from "./BasemapLayerPanel";
@@ -33,23 +35,23 @@ export default function PanelOrchestrator() {
 
                 // Perhitungan Offset Dinamis
                 const dockedOffset = index * PANEL_WIDTH;
-                const floatingLeft = isMobile ? 16 : (index * PANEL_WIDTH) + 16;
+                const floatingLeft = isMobile ? 0 : (index * PANEL_WIDTH);
 
                 return (
                     <div
                         key={panel.id}
                         className={`absolute pointer-events-auto transition-all duration-300 ease-in-out bg-white overflow-hidden flex flex-col ${isFloating
-                            ? "shadow-2xl border border-slate-200 rounded-none"
+                            ? "shadow-2xl border-r border-slate-200 rounded-none"
                             : "border-r border-slate-200 shadow-none rounded-none"
                             }`}
                         style={
                             isFloating
                                 ? {
                                     left: `${floatingLeft}px`,
-                                    top: "16px",
-                                    bottom: "16px",
+                                    top: "0px",
+                                    bottom: "0px",
                                     width: "320px",
-                                    maxWidth: "calc(100vw - 80px)",
+                                    maxWidth: "100vw",
                                     zIndex: 50,
                                 }
                                 : {
@@ -86,7 +88,7 @@ export default function PanelOrchestrator() {
 
                         {/* BODY PANEL (Konten dinamis) */}
                         <div
-                            className="flex-1 overflow-y-auto custom-scrollbar"
+                            className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
                             onClick={() => !isFloating && closePanelsToTheRight(index)}
                         >
                             {renderPanelContent(panel.type, panel.data, panel.id, closePanel)}
@@ -106,6 +108,12 @@ function renderPanelContent(
     closePanel: (id: string) => void
 ) {
     switch (type) {
+        case "katalog-wilayah":
+            return <KatalogWilayahPanel />;
+
+        case "katalog-stasi":
+            return <KatalogStasiPanel />;
+
         case "katalog-keluarga":
             return <KatalogKeluargaPanel />;
 

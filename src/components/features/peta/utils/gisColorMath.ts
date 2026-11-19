@@ -20,8 +20,8 @@ interface MarkerStyleConfig {
  * Resolver Warna Berdasarkan Mode Spasial yang Aktif
  */
 export const resolveMarkerColors = (family: KeluargaData, mode: MarkerMode): MarkerStyleConfig => {
-    let colorClass = "bg-brown-500";
-    let ringClass = "border-brown-200 bg-brown-500/20";
+    let colorClass = "bg-yellow-400";
+    let ringClass = "border-yellow-200 bg-yellow-400/40";
 
     // MODE 1: STATUS EKONOMI / KEPEMILIKAN RUMAH
     if (mode === "ekonomi") {
@@ -65,24 +65,41 @@ export const resolveMarkerColors = (family: KeluargaData, mode: MarkerMode): Mar
 export const createPolymorphicMarker = (
     family: KeluargaData,
     mode: MarkerMode,
-    isSelected: boolean
+    isSelected: boolean,
+    isPengurus: boolean = false
 ) => {
-    const { colorClass, ringClass: baseRingClass } = resolveMarkerColors(family, mode);
+    let { colorClass, ringClass: baseRingClass } = resolveMarkerColors(family, mode);
 
     let finalRingClass = baseRingClass;
     let pulseClass = "";
+    
+    // Status apakah keluarga masuk stasi
+    const hasStasi = !family.is_non_stasi && !!family.Kbg?.stasi_id;
+    
+    let shapeClassRing = "rounded-full";
+    let shapeClassDot = "rounded-full";
 
     // Logika Visual Jika Sedang Disorot/Diklik
     if (isSelected) {
         finalRingClass = "border-slate-800 bg-slate-900/40";
         pulseClass = "animate-pulse"; // Tambahkan efek denyut
+    } else if (isPengurus) {
+        finalRingClass = "border-yellow-400 bg-yellow-400/30 border-2";
+    }
+    
+    // Override gaya jika tidak memiliki stasi (Diamond Abu-abu)
+    if (!hasStasi) {
+        shapeClassRing = "rounded-md rotate-45";
+        shapeClassDot = "rounded-sm rotate-45";
+        if (!isPengurus) colorClass = "bg-slate-500";
+        if (!isSelected && !isPengurus) finalRingClass = "border-slate-400 bg-slate-500/20";
     }
 
     return L.divIcon({
         html: `
       <div style="position: relative; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
-          <span class="absolute inline-flex h-6 w-6 rounded-full border ${finalRingClass} ${pulseClass}"></span>
-          <span class="relative inline-flex rounded-full h-2.5 w-2.5 ${colorClass} border border-white shadow-sm"></span>
+          <span class="absolute inline-flex h-6 w-6 ${shapeClassRing} border ${finalRingClass} ${pulseClass}"></span>
+          <span class="relative inline-flex ${shapeClassDot} h-2.5 w-2.5 ${isPengurus ? 'bg-yellow-500' : colorClass} border border-white shadow-sm"></span>
       </div>
     `,
         className: "custom-family-marker bg-transparent border-none outline-none",

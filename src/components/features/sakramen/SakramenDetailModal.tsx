@@ -14,11 +14,11 @@ export function SakramenDetailModal({ sakramen, open, onClose }: { sakramen: Sak
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-xl w-[95vw] p-0 flex flex-col overflow-hidden bg-white rounded-xl shadow-2xl border-0">
+      <DialogContent className="sm:max-w-xl w-[95vw] p-0 flex flex-col overflow-hidden bg-white rounded-none shadow-2xl border-0">
         
         {/* Header */}
         <div className="p-6 border-b border-slate-200 bg-slate-50/50 flex items-start gap-4">
-          <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-lg shrink-0">
+          <div className="w-12 h-12 rounded-none bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-lg shrink-0">
             <FileText className="w-6 h-6" />
           </div>
           <div className="min-w-0 flex-1">
@@ -34,12 +34,12 @@ export function SakramenDetailModal({ sakramen, open, onClose }: { sakramen: Sak
               <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">Nama Umat</p>
               <h3 className="font-bold text-slate-900 text-base capitalize lowercase">{sakramen.Umat?.nama_lengkap || '-'}</h3>
             </div>
-            <Badge variant="outline" className={`px-3 py-1 text-xs font-semibold ${sacramentsColorMap[sakramen.jenis_sakramen] || 'bg-slate-100 text-slate-800 border-slate-200'}`}>
+            <Badge variant="outline" className={`px-3 py-1 rounded-none text-xs font-bold border-0 ${sacramentsColorMap[sakramen.jenis_sakramen] || 'bg-slate-100 text-slate-800'}`}>
               {sakramen.jenis_sakramen}
             </Badge>
           </div>
 
-          <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 space-y-4">
+          <div className="bg-slate-50/50 rounded-none border border-slate-200/80 shadow-sm p-5 space-y-5">
             <div className="flex items-start gap-3">
               <FileText className="w-4 h-4 text-slate-400 mt-0.5" />
               <div>
@@ -98,7 +98,7 @@ export function SakramenDetailModal({ sakramen, open, onClose }: { sakramen: Sak
 
         {/* Footer */}
         <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end">
-          <Button onClick={onClose} variant="outline" className="rounded-lg">Tutup</Button>
+          <Button onClick={onClose} variant="outline" className="rounded-none font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-100 border-slate-200">Tutup</Button>
         </div>
       </DialogContent>
     </Dialog>

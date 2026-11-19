@@ -91,7 +91,7 @@ const StyledInput = ({ value, onChange, placeholder, type = "text", icon: Icon, 
     {prefix && <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">{prefix}</span>}
     <Input
       type={type}
-      className={`h-12 bg-slate-50/50 hover:bg-slate-50 border-slate-200 focus:border-brown-500 focus:ring-4 focus:ring-brown-500/10 rounded-md text-[15px] font-medium transition-all ${Icon ? 'pl-11' : prefix ? 'pl-12' : 'pl-4'}`}
+      className={`h-12 bg-slate-50/50 hover:bg-slate-50 border-slate-200 focus:border-brown-500 focus:ring-4 focus:ring-brown-500/10 rounded-none text-[15px] font-medium transition-all ${Icon ? 'pl-11' : prefix ? 'pl-12' : 'pl-4'}`}
       value={value || ""}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
@@ -120,14 +120,14 @@ interface SakramenCardProps {
 const SakramenCard = ({ id, label, fields, formData, updateField }: SakramenCardProps) => {
   const isChecked = formData[id];
   return (
-    <div className={`rounded-md border-2 transition-all duration-300 overflow-hidden ${isChecked ? 'border-brown-500 bg-brown-50/20 shadow-md' : 'border-slate-200 hover:border-slate-300 bg-white'}`}>
+    <div className={`rounded-none border-2 transition-all duration-300 overflow-hidden ${isChecked ? 'border-brown-500 bg-brown-50/20 shadow-md' : 'border-slate-200 hover:border-slate-300 bg-white'}`}>
       <label className="flex items-center gap-4 p-5 cursor-pointer select-none">
         <div className="relative flex items-center justify-center">
           <Checkbox 
             id={id} 
             checked={(isChecked as boolean) || false} 
             onCheckedChange={(c: boolean) => updateField(id, c)}
-            className="w-6 h-6 border-2 border-slate-300 data-[state=checked]:bg-brown-600 data-[state=checked]:border-brown-600 transition-all rounded-md"
+            className="w-6 h-6 border-2 border-slate-300 data-[state=checked]:bg-brown-600 data-[state=checked]:border-brown-600 transition-all rounded-none"
           />
         </div>
         <div className="flex-1">
@@ -166,11 +166,11 @@ const SakramenCard = ({ id, label, fields, formData, updateField }: SakramenCard
                         updateField(`${mappedJenis}_sertifikat_file` as keyof MemberFormData, file);
                       }
                     }}
-                    className="h-12 bg-slate-50/50 hover:bg-slate-50 border-slate-200 focus:border-brown-500 rounded-md text-[15px] font-medium transition-all file:bg-brown-50 file:text-brown-700 file:border-0 file:rounded-md file:px-4 file:py-1 file:mr-4 file:text-sm file:font-semibold cursor-pointer"
+                    className="h-12 bg-slate-50/50 hover:bg-slate-50 border-slate-200 focus:border-brown-500 rounded-none text-[15px] font-medium transition-all file:bg-brown-50 file:text-brown-700 file:border-0 file:rounded-none file:px-4 file:py-1 file:mr-4 file:text-sm file:font-semibold cursor-pointer"
                   />
                   {(formData[`${id.replace('has_', '') === 'perkawinan' ? 'nikah' : id.replace('has_', '')}_sertifikat_file` as keyof MemberFormData] as File) && (
                     <p className="text-xs text-green-600 mt-2 font-medium flex items-center">
-                      <span className="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
+                      <span className="w-2 h-2 rounded-none bg-green-500 mr-2"></span>
                       File dipilih: {(formData[`${id.replace('has_', '') === 'perkawinan' ? 'nikah' : id.replace('has_', '')}_sertifikat_file` as keyof MemberFormData] as File).name}
                     </p>
                   )}
@@ -272,17 +272,17 @@ export function MemberModal({ initialData, onClose, onSave }: Props) {
         <div className="space-y-2">
           <Label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Jenis Kelamin</Label>
           <div className="flex gap-4 h-12">
-            <label className={`flex-1 flex items-center justify-center gap-2 rounded-md border-2 cursor-pointer transition-all ${formData.jenis_kelamin === 'Laki-Laki' ? 'border-blue-500 bg-blue-50/50 text-blue-700' : 'border-slate-200 hover:bg-slate-50 text-slate-600'}`}>
+            <label className={`flex-1 flex items-center justify-center gap-2 rounded-none border-2 cursor-pointer transition-all ${formData.jenis_kelamin === 'Laki-Laki' ? 'border-blue-500 bg-blue-50/50 text-blue-700' : 'border-slate-200 hover:bg-slate-50 text-slate-600'}`}>
               <input type="radio" name="jk" className="hidden" checked={formData.jenis_kelamin === 'Laki-Laki'} onChange={() => updateField("jenis_kelamin", "Laki-Laki")} />
-              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${formData.jenis_kelamin === 'Laki-Laki' ? 'border-blue-500' : 'border-slate-300'}`}>
-                {formData.jenis_kelamin === 'Laki-Laki' && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
+              <div className={`w-4 h-4 rounded-none border-2 flex items-center justify-center ${formData.jenis_kelamin === 'Laki-Laki' ? 'border-blue-500' : 'border-slate-300'}`}>
+                {formData.jenis_kelamin === 'Laki-Laki' && <div className="w-2 h-2 bg-blue-500 rounded-none" />}
               </div>
               <span className="font-bold">Laki-Laki</span>
             </label>
-            <label className={`flex-1 flex items-center justify-center gap-2 rounded-md border-2 cursor-pointer transition-all ${formData.jenis_kelamin === 'Perempuan' ? 'border-pink-500 bg-pink-50/50 text-pink-700' : 'border-slate-200 hover:bg-slate-50 text-slate-600'}`}>
+            <label className={`flex-1 flex items-center justify-center gap-2 rounded-none border-2 cursor-pointer transition-all ${formData.jenis_kelamin === 'Perempuan' ? 'border-pink-500 bg-pink-50/50 text-pink-700' : 'border-slate-200 hover:bg-slate-50 text-slate-600'}`}>
               <input type="radio" name="jk" className="hidden" checked={formData.jenis_kelamin === 'Perempuan'} onChange={() => updateField("jenis_kelamin", "Perempuan")} />
-              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${formData.jenis_kelamin === 'Perempuan' ? 'border-pink-500' : 'border-slate-300'}`}>
-                {formData.jenis_kelamin === 'Perempuan' && <div className="w-2 h-2 bg-pink-500 rounded-full" />}
+              <div className={`w-4 h-4 rounded-none border-2 flex items-center justify-center ${formData.jenis_kelamin === 'Perempuan' ? 'border-pink-500' : 'border-slate-300'}`}>
+                {formData.jenis_kelamin === 'Perempuan' && <div className="w-2 h-2 bg-pink-500 rounded-none" />}
               </div>
               <span className="font-bold">Perempuan</span>
             </label>
@@ -295,7 +295,7 @@ export function MemberModal({ initialData, onClose, onSave }: Props) {
             value={formData.status_keluarga} 
             onChange={(v: string) => updateField("status_keluarga", v)} 
             placeholder="Pilih Status"
-            options={["Kepala Keluarga", "Istri", "Anak", "Suami", "Istri 2", "Duda", "Janda", "Lainnya"]}
+            options={["Kepala Keluarga", "Istri", "Anak", "Kakek", "Nenek"]}
             icon={Users}
           />
         </div>
@@ -469,24 +469,24 @@ export function MemberModal({ initialData, onClose, onSave }: Props) {
             <Heart className="w-5 h-5 text-rose-500" /> Status Kehidupan
           </h4>
           <div className="flex gap-4 h-14">
-            <label className={`flex-1 flex items-center justify-center gap-3 rounded-md border-2 cursor-pointer transition-all ${formData.status_hidup !== 'Meninggal Dunia' ? 'border-green-500 bg-green-50/50 text-green-700 shadow-sm' : 'border-slate-200 hover:bg-slate-50 text-slate-500'}`}>
+            <label className={`flex-1 flex items-center justify-center gap-3 rounded-none border-2 cursor-pointer transition-all ${formData.status_hidup !== 'Meninggal Dunia' ? 'border-green-500 bg-green-50/50 text-green-700 shadow-sm' : 'border-slate-200 hover:bg-slate-50 text-slate-500'}`}>
               <input type="radio" name="sh" className="hidden" checked={formData.status_hidup !== 'Meninggal Dunia'} onChange={() => updateField("status_hidup", "Hidup")} />
-              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${formData.status_hidup !== 'Meninggal Dunia' ? 'border-green-500' : 'border-slate-300'}`}>
-                {formData.status_hidup !== 'Meninggal Dunia' && <div className="w-2.5 h-2.5 bg-green-500 rounded-full" />}
+              <div className={`w-5 h-5 rounded-none border-2 flex items-center justify-center ${formData.status_hidup !== 'Meninggal Dunia' ? 'border-green-500' : 'border-slate-300'}`}>
+                {formData.status_hidup !== 'Meninggal Dunia' && <div className="w-2.5 h-2.5 bg-green-500 rounded-none" />}
               </div>
               <span className="font-bold text-lg">Masih Hidup</span>
             </label>
-            <label className={`flex-1 flex items-center justify-center gap-3 rounded-md border-2 cursor-pointer transition-all ${formData.status_hidup === 'Meninggal Dunia' ? 'border-rose-500 bg-rose-50/50 text-rose-700 shadow-sm' : 'border-slate-200 hover:bg-slate-50 text-slate-500'}`}>
+            <label className={`flex-1 flex items-center justify-center gap-3 rounded-none border-2 cursor-pointer transition-all ${formData.status_hidup === 'Meninggal Dunia' ? 'border-rose-500 bg-rose-50/50 text-rose-700 shadow-sm' : 'border-slate-200 hover:bg-slate-50 text-slate-500'}`}>
               <input type="radio" name="sh" className="hidden" checked={formData.status_hidup === 'Meninggal Dunia'} onChange={() => updateField("status_hidup", "Meninggal Dunia")} />
-              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${formData.status_hidup === 'Meninggal Dunia' ? 'border-rose-500' : 'border-slate-300'}`}>
-                {formData.status_hidup === 'Meninggal Dunia' && <div className="w-2.5 h-2.5 bg-rose-500 rounded-full" />}
+              <div className={`w-5 h-5 rounded-none border-2 flex items-center justify-center ${formData.status_hidup === 'Meninggal Dunia' ? 'border-rose-500' : 'border-slate-300'}`}>
+                {formData.status_hidup === 'Meninggal Dunia' && <div className="w-2.5 h-2.5 bg-rose-500 rounded-none" />}
               </div>
               <span className="font-bold text-lg">Meninggal Dunia</span>
             </label>
           </div>
 
           {isDeceased && (
-            <div className="mt-6 bg-rose-50 p-6 border-2 border-rose-100 rounded-md animate-in zoom-in-95 duration-300">
+            <div className="mt-6 bg-rose-50 p-6 border-2 border-rose-100 rounded-none animate-in zoom-in-95 duration-300">
               <h3 className="font-extrabold text-rose-800 text-lg mb-4 flex items-center gap-2">Detail Kematian</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -507,11 +507,11 @@ export function MemberModal({ initialData, onClose, onSave }: Props) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 p-4 sm:p-6 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-md shadow-[0_30px_100px_rgba(0,0,0,0.3)] w-full max-w-3xl max-h-[95vh] flex flex-col overflow-hidden ring-1 ring-slate-900/10 animate-in zoom-in-95 duration-300">
+      <div className="bg-white rounded-none shadow-[0_30px_100px_rgba(0,0,0,0.3)] w-full max-w-3xl max-h-[95vh] flex flex-col overflow-hidden ring-1 ring-slate-900/10 animate-in zoom-in-95 duration-300">
         
         {/* HEADER */}
         <div className="relative px-8 py-6 bg-gradient-to-r from-brown-900 to-slate-900 text-white flex items-center justify-between shrink-0 overflow-hidden">
-          <div className="absolute right-0 top-0 w-64 h-64 bg-white/5 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2"></div>
+          <div className="absolute right-0 top-0 w-64 h-64 bg-white/5 rounded-none blur-3xl translate-x-1/2 -translate-y-1/2"></div>
           <div className="relative z-10">
             <h2 className="text-2xl font-extrabold tracking-tight mb-1">
               {initialData ? "Ubah Data Anggota" : "Registrasi Anggota Baru"}
@@ -522,7 +522,7 @@ export function MemberModal({ initialData, onClose, onSave }: Props) {
             variant="ghost" 
             size="icon" 
             onClick={onClose} 
-            className="relative z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/20"
+            className="relative z-10 w-10 h-10 rounded-none bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/20"
           >
             <X className="h-5 w-5" />
           </Button>
@@ -562,13 +562,13 @@ export function MemberModal({ initialData, onClose, onSave }: Props) {
           <Button 
             variant="ghost" 
             onClick={onClose} 
-            className="rounded-md px-6 h-12 font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+            className="rounded-none px-6 h-12 font-bold text-slate-500 hover:bg-slate-100 hover:text-slate-700"
           >
             Batalkan
           </Button>
           <Button 
             onClick={handleSave} 
-            className="bg-brown-600 hover:bg-brown-700 active:bg-brown-800 text-white rounded-md px-10 h-12 shadow-lg shadow-brown-600/20 font-bold transition-all hover:translate-y-[-2px]"
+            className="bg-brown-600 hover:bg-brown-700 active:bg-brown-800 text-white rounded-none px-10 h-12 shadow-lg shadow-brown-600/20 font-bold transition-all hover:translate-y-[-2px]"
           >
             {initialData ? "Simpan Perubahan" : "Tambahkan Anggota"}
           </Button>
@@ -578,3 +578,4 @@ export function MemberModal({ initialData, onClose, onSave }: Props) {
     </div>
   );
 }
+

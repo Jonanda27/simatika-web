@@ -48,11 +48,16 @@ export interface FamilyFormData {
   foto_rumah_path: string | null;
   foto_rumah_file?: File | null;
   foto_rumah_url?: string | null;
+  kk_url_path?: string | null;
+  file_kk?: File | null;
   fasilitas_kamar_mandi: boolean;
   fasilitas_kamar_cuci: boolean;
   fasilitas_wc: boolean;
   status_rumah: string;
   pendapatan_per_bulan: string;
   asuransi_kesehatan: string;
+  punya_stasi?: boolean;
+  stasi_id?: string;
+  target_kbg_id?: string;
   members: FamilyMember[];
 }

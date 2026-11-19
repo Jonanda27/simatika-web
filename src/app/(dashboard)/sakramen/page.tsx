@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { 
-  Search, Eye, ChevronLeft, ChevronRight, Trash2, X, Plus, User, FileText, Calendar, MapPin
+  Search, Eye, ChevronLeft, ChevronRight, Trash2, X, Plus, User, FileText, Calendar, MapPin, Download
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,7 @@ export default function SakramenPage() {
   const [jenisFilter, setJenisFilter] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSakramen, setSelectedSakramen] = useState<SakramenData | null>(null);
+  const [exporting, setExporting] = useState(false);
   
   const [pagination, setPagination] = useState({ total: 0, totalPages: 1, currentPage: 1, limit: 15 });
 
@@ -60,6 +62,48 @@ export default function SakramenPage() {
     setModalOpen(true);
   };
 
+  const handleExportExcel = async () => {
+    setExporting(true);
+    try {
+      const res = await sakramenService.getAll(1, 10000, search, jenisFilter);
+      const allData = res.data;
+
+      if (!allData || allData.length === 0) {
+        alert("Tidak ada data untuk diexport");
+        return;
+      }
+
+      const excelData = allData.map((item, index) => {
+        return {
+          "No": index + 1,
+          "Nama Umat": item.Umat?.nama_lengkap || "-",
+          "Jenis Sakramen": item.jenis_sakramen || "-",
+          "Nomor Surat": item.nomor_surat || "-",
+          "Tanggal Penerimaan": item.tanggal_penerimaan ? format(new Date(item.tanggal_penerimaan), 'dd MMM yyyy', { locale: localeId }) : "-",
+          "Tempat Pelaksanaan": item.tempat_pelaksanaan || "-",
+          "Nama Pastor": item.nama_pastor || "-",
+          "Nama Wali Saksi": item.nama_wali_saksi || "-",
+        };
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Data Sakramen");
+
+      const wscols = [
+        {wch: 5}, {wch: 30}, {wch: 20}, {wch: 25}, {wch: 20}, {wch: 30}, {wch: 30}, {wch: 30}
+      ];
+      worksheet['!cols'] = wscols;
+
+      XLSX.writeFile(workbook, `Data_Sakramen.xlsx`);
+    } catch (error) {
+      console.error("Gagal export excel:", error);
+      alert("Gagal melakukan export data");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const totalPages = pagination.totalPages;
   const curPage = pagination.currentPage;
 
@@ -76,39 +120,45 @@ export default function SakramenPage() {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
-              <FileText className="w-4.5 h-4.5 text-indigo-600" />
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-none bg-indigo-50 border border-indigo-100 flex items-center justify-center">
+              <FileText className="w-5 h-5 text-indigo-600" />
             </div>
             Data Sakramen
           </h2>
-          <p className="text-sm text-slate-500 mt-1 ml-[2.6rem]">
+          <p className="text-sm text-slate-500 mt-2 ml-[3.25rem] font-medium">
             Total <span className="font-bold text-slate-800">{pagination.total.toLocaleString('id-ID')}</span> riwayat sakramen tercatat.
           </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button onClick={handleExportExcel} variant="outline" className="rounded-none border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800 transition-colors font-bold" disabled={exporting || loading}>
+            <Download className={`w-4 h-4 mr-2 ${exporting ? 'animate-bounce' : ''}`} />
+            {exporting ? 'Mengekspor...' : 'Export Excel'}
+          </Button>
         </div>
       </div>
 
       {/* MAIN CARD */}
-      <Card className="shadow-md border-slate-200 rounded-xl overflow-hidden">
+      <Card className="shadow-sm border-slate-200/80 rounded-none overflow-hidden bg-white">
         <CardContent className="p-0">
 
           {/* FILTER BAR */}
-          <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row gap-3 bg-white items-center">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row gap-4 bg-slate-50/50 rounded-none items-center">
+            <div className="relative flex-1 w-full max-w-sm">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-slate-400" />
               <input
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Cari nama umat..."
-                className="w-full pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow placeholder:text-slate-400"
+                className="w-full pl-10 pr-4 h-11 text-sm border border-slate-200 rounded-none bg-white shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition-all placeholder:text-slate-400 font-medium"
               />
             </div>
             
             <select
               value={jenisFilter}
               onChange={(e) => setJenisFilter(e.target.value)}
-              className="px-3 py-2.5 text-sm border border-slate-200 rounded-xl bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-auto"
+              className="px-4 h-11 text-sm border border-slate-200 rounded-none bg-white shadow-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 w-full sm:w-auto font-medium"
             >
               <option value="">Semua Sakramen</option>
               <option value="Baptis">Baptis</option>
@@ -147,8 +197,8 @@ export default function SakramenPage() {
                   Array.from({ length: 8 }).map((_, i) => (
                     <TableRow key={i}>
                       {Array.from({ length: 7 }).map((_, j) => (
-                        <TableCell key={j}>
-                          <div className="h-4 bg-slate-100 rounded animate-pulse" style={{ width: `${50 + Math.random() * 50}%` }} />
+                        <TableCell key={j} className="py-4">
+                          <div className="h-4 bg-slate-200/60 rounded-none animate-pulse" style={{ width: `${50 + Math.random() * 50}%` }} />
                         </TableCell>
                       ))}
                     </TableRow>
@@ -166,45 +216,45 @@ export default function SakramenPage() {
                     const rowNum = (pagination.currentPage - 1) * pagination.limit + index + 1;
 
                     return (
-                      <TableRow key={s.id} className="hover:bg-slate-100/60 transition-colors group">
+                      <TableRow key={s.id} className="group hover:bg-transparent">
                         <TableCell className="text-slate-400 text-sm">{rowNum}</TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2.5">
-                            <span className="font-semibold text-slate-900 text-sm capitalize lowercase">{s.Umat?.nama_lengkap || '-'}</span>
+                          <div className="flex items-center gap-3">
+                            <span className="font-bold text-slate-800 text-sm capitalize lowercase">{s.Umat?.nama_lengkap || '-'}</span>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={`text-xs ${sacramentsColorMap[s.jenis_sakramen] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                          <Badge variant="outline" className={`text-xs rounded-none font-bold border-0 px-2 py-1 ${sacramentsColorMap[s.jenis_sakramen] || 'bg-slate-50 text-slate-600'}`}>
                             {s.jenis_sakramen}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <span className="font-mono text-xs text-slate-700 bg-slate-100 px-2 py-1 rounded">
+                          <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded-none border border-slate-200/60">
                             {s.nomor_surat || '-'}
                           </span>
                         </TableCell>
                         <TableCell className="text-sm text-slate-600">
                           {s.tanggal_penerimaan ? format(new Date(s.tanggal_penerimaan), 'dd MMM yyyy', { locale: localeId }) : '-'}
                         </TableCell>
-                        <TableCell className="text-sm text-slate-600 truncate max-w-[150px]">
+                        <TableCell className="text-sm font-medium text-slate-600 truncate max-w-[150px]">
                           {s.tempat_pelaksanaan || '-'}
                         </TableCell>
                         <TableCell className="text-center pr-4">
                           <div className="flex items-center justify-center gap-1">
                             <Button
-                              variant="ghost"
+                              variant="outline"
                               size="icon"
                               onClick={() => openDetail(s)}
                               title="Lihat Detail"
-                              className="h-8 w-8 text-slate-400 hover:text-brown-600 hover:bg-brown-50 rounded-lg transition-colors"
+                              className="h-8 w-8 text-slate-500 hover:text-indigo-700 border-slate-200 hover:border-indigo-200 hover:bg-indigo-50 rounded-none transition-colors"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
                             <Button
-                              variant="ghost"
+                              variant="outline"
                               size="icon"
                               title="Hapus Data"
-                              className="h-8 w-8 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                              className="h-8 w-8 text-slate-500 hover:text-rose-700 border-slate-200 hover:border-rose-200 hover:bg-rose-50 rounded-none transition-colors"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -219,16 +269,15 @@ export default function SakramenPage() {
           </div>
 
           {/* PAGINATION */}
-          <div className="p-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white">
-            <p className="text-sm text-slate-500">
-              Menampilkan{' '}
-              <span className="font-semibold text-slate-800">{list.length > 0 ? (curPage - 1) * pagination.limit + 1 : 0}</span>–
-              <span className="font-semibold text-slate-800">{Math.min(curPage * pagination.limit, pagination.total)}</span> dari{' '}
-              <span className="font-semibold text-slate-800">{pagination.total.toLocaleString('id-ID')}</span> data sakramen
+          <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-50/30 rounded-none">
+            <p className="text-sm text-slate-500 font-medium">
+              Menampilkan <span className="font-bold text-slate-800">{list.length > 0 ? (curPage - 1) * pagination.limit + 1 : 0}</span>–
+              <span className="font-bold text-slate-800">{Math.min(curPage * pagination.limit, pagination.total)}</span> dari{' '}
+              <span className="font-bold text-slate-800">{pagination.total.toLocaleString('id-ID')}</span> data sakramen
             </p>
 
             <div className="flex items-center gap-1">
-              <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg" disabled={curPage === 1 || loading} onClick={() => fetchData(curPage - 1)}>
+              <Button variant="outline" size="icon" className="h-9 w-9 rounded-none text-slate-600 border-slate-200 bg-white hover:bg-slate-50" disabled={curPage === 1 || loading} onClick={() => fetchData(curPage - 1)}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               {getPageNumbers().map((page) => (
@@ -236,14 +285,14 @@ export default function SakramenPage() {
                   key={page}
                   variant={curPage === page ? 'default' : 'outline'}
                   size="icon"
-                  className={`h-8 w-8 rounded-lg text-xs font-medium ${curPage === page ? 'bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700' : ''}`}
+                  className={`h-9 w-9 rounded-none text-sm font-bold ${curPage === page ? 'bg-indigo-600 border-transparent text-white hover:bg-indigo-700' : 'text-slate-600 bg-white border-slate-200 hover:bg-slate-50'}`}
                   onClick={() => fetchData(page)}
                   disabled={loading}
                 >
                   {page}
                 </Button>
               ))}
-              <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg" disabled={curPage === totalPages || loading || totalPages === 0} onClick={() => fetchData(curPage + 1)}>
+              <Button variant="outline" size="icon" className="h-9 w-9 rounded-none text-slate-600 border-slate-200 bg-white hover:bg-slate-50" disabled={curPage === totalPages || loading || totalPages === 0} onClick={() => fetchData(curPage + 1)}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -261,3 +310,4 @@ export default function SakramenPage() {
     </div>
   );
 }
+

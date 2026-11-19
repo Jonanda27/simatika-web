@@ -158,3 +158,4 @@ export default function MapComponent({ data }: MapComponentProps) {
     </div>
   );
 }
+

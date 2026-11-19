@@ -5,6 +5,8 @@
  * Membantu Orchestrator menentukan komponen mana yang harus dirender di stack.
  */
 export type GisPanelType =
+    | 'katalog-wilayah'    // Panel hierarki Stasi > KBG > Umat
+    | 'katalog-stasi'      // Panel daftar stasi
     | 'katalog-keluarga'   // Panel daftar keluarga (Flush List di kiri)
     | 'detil-keluarga'     // Panel melayang (floating) untuk detail info keluarga & anggota
     | 'basemap-layer'      // Panel untuk pengaturan peta dasar dan mode marker

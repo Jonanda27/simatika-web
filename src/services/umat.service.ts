@@ -25,6 +25,10 @@ class UmatService {
   async getById(id: string): Promise<{ success: boolean; data: UmatData }> {
     return api.get(`/umat/${id}`);
   }
+
+  async delete(id: string): Promise<{ success: boolean; message: string }> {
+    return api.delete(`/umat/${id}`);
+  }
 }
 
 export const umatService = new UmatService();

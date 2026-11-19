@@ -10,6 +10,8 @@ import { useGisUmatStore } from "@/store/useGisUmatStore";
 import { KeluargaData } from "@/types/keluarga";
 import { cn } from "@/lib/utils";
 import { differenceInYears } from "date-fns";
+import { useEffect } from "react";
+import { kbgPengurusService, KbgPengurusData } from "@/services/kbgPengurus.service";
 
 interface DetailKeluargaPanelProps {
     familyData: KeluargaData;
@@ -46,6 +48,19 @@ const getSacramentStatus = (sacraments?: any[]) => {
 export default function DetailKeluargaPanel({ familyData, panelId }: DetailKeluargaPanelProps) {
     const { closePanel } = useGisUmatStore();
     const [activeTab, setActiveTab] = useState<TabType>("profil");
+    const [pengurusList, setPengurusList] = useState<KbgPengurusData[]>([]);
+
+    useEffect(() => {
+        if (familyData?.kbg_id) {
+            kbgPengurusService.getByKbgId(familyData.kbg_id).then(res => {
+                if (res.success && res.data) {
+                    setPengurusList(res.data.filter(p => p.is_active));
+                }
+            }).catch(console.error);
+        } else {
+            setPengurusList([]);
+        }
+    }, [familyData?.kbg_id]);
 
     if (!familyData) return null;
 
@@ -64,7 +79,14 @@ export default function DetailKeluargaPanel({ familyData, panelId }: DetailKelua
                     <h3 className="text-xs font-bold text-slate-900 leading-tight">
                         Keluarga {kepalaKeluarga}
                     </h3>
-                    <p className="text-[9px] font-mono text-slate-500 mt-1">KK: {familyData.no_kk_paroki || "-"}</p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                        <span className="text-[9px] font-mono font-bold bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded-sm">
+                            {familyData.kode_unik_keluarga || "NON-ID"}
+                        </span>
+                        <span className="text-[9px] font-mono text-slate-500">
+                            KK: {familyData.no_kk_paroki || "-"}
+                        </span>
+                    </div>
                 </div>
 
                 <button
@@ -77,7 +99,7 @@ export default function DetailKeluargaPanel({ familyData, panelId }: DetailKelua
             </div>
 
             {/* BODY - Scrollable */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col">
+            <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex flex-col">
 
                 {/* HERO IMAGE SECTION (Single Image Render) */}
                 <div className="relative w-full aspect-video bg-slate-900 shrink-0 group">
@@ -92,7 +114,7 @@ export default function DetailKeluargaPanel({ familyData, panelId }: DetailKelua
                             <div className="absolute bottom-2 left-3 flex items-center gap-1.5 text-white">
                                 <Home size={12} className="text-brown-400" />
                                 <span className="text-[9px] font-bold uppercase tracking-widest text-white/90">
-                                    Visualisasi Hunian
+                                    Visualisasi Rumah
                                 </span>
                             </div>
                         </>
@@ -162,6 +184,7 @@ export default function DetailKeluargaPanel({ familyData, panelId }: DetailKelua
                                 {familyData.Umats.map((umat: any, idx: number) => {
                                     const sac = getSacramentStatus(umat.Sacraments);
                                     const isKK = umat.status_dalam_keluarga === "KK";
+                                    const pengurusInfo = pengurusList.find(p => p.umat_id === umat.id);
 
                                     return (
                                         <div key={idx} className="p-4 bg-white hover:bg-slate-50 transition-colors">
@@ -174,14 +197,27 @@ export default function DetailKeluargaPanel({ familyData, panelId }: DetailKelua
                                                 </div>
 
                                                 <div className="flex flex-col min-w-0 flex-1">
-                                                    <div className="flex items-center justify-between mb-1">
-                                                        <h4 className="text-xs font-bold text-slate-900 truncate">
-                                                            {umat.nama_lengkap}
-                                                        </h4>
-                                                        <span className={cn("text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 border leading-none",
+                                                    <div className="flex items-center justify-between mb-0.5">
+                                                        <div className="flex items-center gap-1 min-w-0">
+                                                            <h4 className="text-xs font-bold text-slate-900 truncate">
+                                                                {umat.nama_lengkap}
+                                                            </h4>
+                                                            {pengurusInfo && (
+                                                                <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 border leading-none shrink-0 ml-1 bg-yellow-100 text-yellow-800 border-yellow-300">
+                                                                    {pengurusInfo.jabatan}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <span className={cn("text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 border leading-none shrink-0 ml-2",
                                                             isKK ? "bg-brown-600 text-white border-brown-700" : "bg-slate-100 text-slate-500 border-slate-200"
                                                         )}>
                                                             {umat.status_dalam_keluarga || "-"}
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    <div className="mb-1.5">
+                                                        <span className="text-[9px] font-mono font-bold bg-slate-100 text-slate-600 border border-slate-200 px-1.5 py-0.5 rounded-sm">
+                                                            ID: {umat.nomor_induk_umat || "BELUM TERBIT"}
                                                         </span>
                                                     </div>
 

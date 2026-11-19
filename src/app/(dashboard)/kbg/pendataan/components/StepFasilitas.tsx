@@ -23,9 +23,9 @@ export function StepFasilitas({ data, updateField }: Props) {
 
   return (
     <div className="space-y-6">
-      <Card className="p-6 border-0 shadow-sm ring-1 ring-slate-900/5 rounded-md">
+      <Card className="p-6 border-0  ring-1 ring-slate-900/5 rounded-none">
         <div className="flex items-center gap-4 mb-6">
-          <div className="p-3 bg-gradient-to-br from-brown-50 to-brown-100 rounded-xl text-brown-600 shadow-inner">
+          <div className="p-3 bg-gradient-to-br from-brown-50 to-brown-100 rounded-none text-brown-600 ">
             <Home className="h-6 w-6" />
           </div>
           <div>
@@ -41,7 +41,7 @@ export function StepFasilitas({ data, updateField }: Props) {
               <Key className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
               <select
                 id="status_rumah"
-                className="flex h-10 w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 pl-10 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brown-600 focus:ring-offset-2"
+                className="flex h-10 w-full items-center justify-between rounded-none border border-slate-200 bg-white px-3 pl-10 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brown-600 focus:ring-offset-2"
                 value={data.status_rumah || ""}
                 onChange={(e) => updateField("status_rumah", e.target.value)}
               >
@@ -58,9 +58,9 @@ export function StepFasilitas({ data, updateField }: Props) {
         </div>
       </Card>
 
-      <Card className="p-6 border-0 shadow-sm ring-1 ring-slate-900/5 rounded-md">
+      <Card className="p-6 border-0  ring-1 ring-slate-900/5 rounded-none">
         <div className="flex items-center gap-4 mb-6">
-          <div className="p-3 bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl text-teal-600 shadow-inner">
+          <div className="p-3 bg-gradient-to-br from-teal-50 to-teal-100 rounded-none text-teal-600 ">
             <Bath className="h-6 w-6" />
           </div>
           <div>
@@ -69,7 +69,7 @@ export function StepFasilitas({ data, updateField }: Props) {
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200/60 bg-slate-50 overflow-hidden divide-y divide-slate-200/60 shadow-inner">
+        <div className="rounded-none border border-slate-200/60 bg-slate-50 overflow-hidden divide-y divide-slate-200/60 ">
           {fasilitasItems.map((item) => (
             <div key={item.id} className="flex items-center justify-between p-4 bg-white hover:bg-slate-50/50 transition-colors">
               <Label
@@ -91,3 +91,4 @@ export function StepFasilitas({ data, updateField }: Props) {
     </div>
   );
 }
+

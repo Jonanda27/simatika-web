@@ -1,6 +1,7 @@
 // src/types/keluarga.ts
 export interface KeluargaAnggota {
   id: string;
+  nomor_induk_umat?: string | null;
   nama_lengkap: string;
   fam: string | null;
   status_dalam_keluarga: string | null;
@@ -15,7 +16,9 @@ export interface KeluargaAnggota {
 
 export interface KeluargaData {
   id: string;
+  kode_unik_keluarga?: string | null;
   no_kk_paroki: string | null;
+  kk_url?: string | null;
   status_rumah: string | null;
   fasilitas_kamar_mandi: boolean;
   fasilitas_kamar_cuci: boolean;
@@ -25,7 +28,9 @@ export interface KeluargaData {
   foto_rumah_url: string | null;
   latitude: number | null;
   longitude: number | null;
-  Kbg?: { id: string; nama_kbg: string } | null;
+  is_non_stasi?: boolean;
+  kbg_id?: string | null;
+  Kbg?: { id: string; nama_kbg: string; stasi_id?: string | null } | null;
   Umats?: KeluargaAnggota[];
   createdAt?: string;
 }

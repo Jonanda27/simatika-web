@@ -8,8 +8,10 @@ import { useGisUmatStore } from "@/store/useGisUmatStore";
 import { keluargaService } from "@/services/keluarga.service";
 import { KeluargaData } from "@/types/keluarga";
 
-// IMPORT MOCK DATA KITA
-import { dummyKeluargaGis } from "@/lib/dummyGisData";
+// (Mock data dihapus karena sekarang full tersambung DB)
+
+import { useAuth } from "@/context/AuthContext";
+import { usePathname } from "next/navigation";
 
 // Helper untuk ekstrak Kepala Keluarga
 const getKepalaKeluarga = (umats?: any[]) => {
@@ -19,7 +21,13 @@ const getKepalaKeluarga = (umats?: any[]) => {
 };
 
 export default function KatalogKeluargaPanel() {
-    const { openPanel, selectedFamilyId, setSelectedFamilyId } = useGisUmatStore();
+    const { openPanel, selectedFamilyId, setSelectedFamilyId, selectedKbgId, setSelectedKbgId, stasiFilterMode, setStasiFilterMode } = useGisUmatStore();
+    const { user } = useAuth();
+    const pathname = usePathname();
+    const isPetaKbg = pathname === "/peta-kbg";
+    
+    // Cek apakah user adalah admin stasi
+    const isStasi = user?.role && (user.role === 'ADMIN_STASI' || user.role === 'Admin Stasi' || user.role.includes('STASI'));
 
     const [searchQuery, setSearchQuery] = useState("");
     const [families, setFamilies] = useState<KeluargaData[]>([]);
@@ -34,14 +42,11 @@ export default function KatalogKeluargaPanel() {
             try {
                 const res = await keluargaService.getAll({ limit: 5000 });
                 if (isMounted && res.success) {
-                    // MENGGABUNGKAN DATA RIIL API + MOCK DATA DUMMY
-                    const combinedData = [...res.data, ...dummyKeluargaGis];
-                    setFamilies(combinedData);
+                    setFamilies(res.data);
                 }
             } catch (error) {
                 console.error("Gagal memuat katalog keluarga:", error);
-                // JIKA API MATI/GAGAL, TETAP TAMPILKAN MOCK DATA
-                if (isMounted) setFamilies(dummyKeluargaGis);
+                if (isMounted) setFamilies([]);
             } finally {
                 if (isMounted) setIsLoading(false);
             }
@@ -51,21 +56,40 @@ export default function KatalogKeluargaPanel() {
         return () => { isMounted = false; };
     }, []);
 
-    // Filter Search
+    // Filter Search dan KBG
     const filteredFamilies = useMemo(() => {
-        if (!searchQuery) return families;
+        let result = families;
+        
+        // Jika ada selectedKbgId (Admin Stasi sudah klik KBG), filter data sesuai KBG
+        if (selectedKbgId && selectedKbgId !== 'ALL') {
+            result = result.filter(f => f.kbg_id === selectedKbgId);
+        }
+        
+        // Filter stasi
+        if (stasiFilterMode === 'has_stasi') {
+            result = result.filter(f => !f.is_non_stasi && !!f.Kbg?.stasi_id);
+        } else if (stasiFilterMode === 'no_stasi') {
+            result = result.filter(f => f.is_non_stasi || !f.Kbg?.stasi_id);
+        }
+
+        if (!searchQuery) return result;
         const lowerQuery = searchQuery.toLowerCase();
 
-        return families.filter((f) => {
+        return result.filter((f) => {
             const kepala = getKepalaKeluarga(f.Umats).toLowerCase();
             const noKk = (f.no_kk_paroki || "").toLowerCase();
             return kepala.includes(lowerQuery) || noKk.includes(lowerQuery);
         });
-    }, [searchQuery, families]);
+    }, [searchQuery, families, selectedKbgId, stasiFilterMode]);
 
     // Handle Klik Baris
     const handleFamilyClick = (family: KeluargaData) => {
         setSelectedFamilyId(family.id);
+        
+        // PENTING: Beralih ke "Mode 2" (menampilkan umat) di peta dengan mengaktifkan KBG si umat
+        if (family.kbg_id) {
+            setSelectedKbgId(family.kbg_id);
+        }
 
         if (family.latitude !== null && family.longitude !== null) {
             window.dispatchEvent(
@@ -74,12 +98,55 @@ export default function KatalogKeluargaPanel() {
                 })
             );
         }
-
-        openPanel("detil-keluarga", `Kel. ${getKepalaKeluarga(family.Umats)}`, family);
     };
 
     return (
         <div className="flex flex-col h-full bg-white pb-10 text-slate-800">
+            {/* BANNER KONTROL MODE UNTUK PETA STASI */}
+            {!isPetaKbg && selectedKbgId && selectedKbgId !== 'ALL' && (
+                <div className="px-4 py-2 bg-slate-100 border-b border-slate-200 flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-600">Mode KBG Aktif</span>
+                    <button 
+                        onClick={() => {
+                            setSelectedKbgId(null);
+                            setSelectedFamilyId(null);
+                            window.dispatchEvent(new Event("map-reset-view"));
+                        }}
+                        className="text-[10px] font-bold text-white bg-brown-600 hover:bg-brown-700 px-3 py-1.5 rounded-sm transition-colors"
+                    >
+                        Tampilkan Semua KBG
+                    </button>
+                </div>
+            )}
+            {!isPetaKbg && selectedKbgId === 'ALL' && (
+                <div className="px-4 py-2 bg-slate-100 border-b border-slate-200 flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-600">Semua Keluarga</span>
+                    <button 
+                        onClick={() => {
+                            setSelectedKbgId(null);
+                            setSelectedFamilyId(null);
+                            window.dispatchEvent(new Event("map-reset-view"));
+                        }}
+                        className="text-[10px] font-bold text-white bg-brown-600 hover:bg-brown-700 px-3 py-1.5 rounded-sm transition-colors"
+                    >
+                        Kembali ke Titik KBG
+                    </button>
+                </div>
+            )}
+            {!isPetaKbg && !selectedKbgId && (
+                <div className="px-4 py-2 bg-slate-100 border-b border-slate-200 flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-600">Mode Titik KBG</span>
+                    <button 
+                        onClick={() => {
+                            setSelectedKbgId('ALL');
+                            window.dispatchEvent(new Event("map-reset-view"));
+                        }}
+                        className="text-[10px] font-bold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-sm transition-colors shadow-sm shadow-blue-500/20"
+                    >
+                        Lihat Semua Titik Keluarga
+                    </button>
+                </div>
+            )}
             <div className="px-4 py-2 border-b border-slate-200 bg-slate-50 sticky top-0 z-10 shadow-sm">
                 <div className="relative group">
                     <Search
@@ -93,6 +160,28 @@ export default function KatalogKeluargaPanel() {
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full bg-white border border-slate-200 rounded-none py-1.5 pl-8 pr-3 text-[12px] font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:border-brown-500 focus:ring-1 focus:ring-brown-500 transition-all"
                     />
+                </div>
+                
+                {/* Filter Toggles */}
+                <div className="flex bg-slate-200/50 p-1 mt-2">
+                    <button
+                        onClick={() => setStasiFilterMode('all')}
+                        className={`flex-1 text-[9px] font-bold uppercase tracking-wider py-1.5 transition-colors ${stasiFilterMode === 'all' ? 'bg-white text-brown-700 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'}`}
+                    >
+                        Semua
+                    </button>
+                    <button
+                        onClick={() => setStasiFilterMode('has_stasi')}
+                        className={`flex-1 text-[9px] font-bold uppercase tracking-wider py-1.5 transition-colors ${stasiFilterMode === 'has_stasi' ? 'bg-white text-emerald-700 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'}`}
+                    >
+                        Masuk Stasi
+                    </button>
+                    <button
+                        onClick={() => setStasiFilterMode('no_stasi')}
+                        className={`flex-1 text-[9px] font-bold uppercase tracking-wider py-1.5 transition-colors ${stasiFilterMode === 'no_stasi' ? 'bg-white text-rose-700 shadow-sm border border-slate-200/50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200'}`}
+                    >
+                        Tanpa Stasi
+                    </button>
                 </div>
             </div>
 
@@ -153,7 +242,7 @@ export default function KatalogKeluargaPanel() {
                                         <div className="flex items-center gap-1.5 text-[9px] font-medium text-slate-500 uppercase tracking-wider mt-0.5">
                                             <span>{family.no_kk_paroki || "NON-KK"}</span>
                                             <span className="text-slate-300">•</span>
-                                            <span className="flex items-center gap-1"><Users size={10} /> {totalAnggota} Jiwa</span>
+                                            <span className="flex items-center gap-1"><Users size={10} /> {totalAnggota} Anggota</span>
                                         </div>
                                     </div>
                                 </div>

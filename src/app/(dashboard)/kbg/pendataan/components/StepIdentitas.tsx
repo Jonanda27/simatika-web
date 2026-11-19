@@ -1,16 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CreditCard, MapPin, Camera, Home, Crosshair, Map } from "lucide-react";
+import { CreditCard, MapPin, Camera, Home, Crosshair, Map, Building2, Users } from "lucide-react";
 import dynamic from "next/dynamic";
 import { FamilyFormData } from "@/types/family";
+import { api } from "@/lib/api";
 
 const MapPickerModal = dynamic(() => import("./MapPickerModal"), { 
   ssr: false, 
-  loading: () => <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 p-4 sm:p-6 backdrop-blur-sm"><div className="bg-white p-8 rounded-md shadow-xl flex items-center gap-3"><div className="w-6 h-6 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div><span className="font-semibold text-slate-700">Memuat Peta...</span></div></div> 
+  loading: () => <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 p-4 sm:p-6 backdrop-blur-sm"><div className="bg-white p-8 rounded-none  flex items-center gap-3"><div className="w-6 h-6 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div><span className="font-semibold text-slate-700">Memuat Peta...</span></div></div> 
 });
 
 interface Props {
@@ -20,7 +21,31 @@ interface Props {
 
 export function StepIdentitas({ data, updateField }: Props) {
   const [isMapOpen, setIsMapOpen] = useState(false);
+  const [stasiList, setStasiList] = useState<any[]>([]);
+  const [kbgList, setKbgList] = useState<any[]>([]);
   const hasGps = data.lat && data.lng;
+
+  useEffect(() => {
+    // Fetch Stasi on mount
+    api.get("/stasi").then(res => {
+      if (res.success) setStasiList(res.data);
+    }).catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    // Fetch KBG when conditions met
+    if (data.punya_stasi === true && data.stasi_id) {
+      api.get(`/kbgs?stasi_id=${data.stasi_id}`).then(res => {
+        if (res.success) setKbgList(res.data);
+      }).catch(console.error);
+    } else if (data.punya_stasi === false) {
+      api.get(`/kbgs?no_stasi=true`).then(res => {
+        if (res.success) setKbgList(res.data);
+      }).catch(console.error);
+    } else {
+      setKbgList([]);
+    }
+  }, [data.punya_stasi, data.stasi_id]);
 
   const handleGetLocation = () => {
     if (navigator.geolocation) {
@@ -53,11 +78,20 @@ export function StepIdentitas({ data, updateField }: Props) {
     }
   };
 
+  const handleFileUploadKK = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      updateField("kk_url_path", url); // for preview
+      updateField("file_kk", file); // for upload
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <Card className="p-6 border-0 shadow-sm ring-1 ring-slate-900/5 rounded-md">
+      <Card className="p-6 border-0  ring-1 ring-slate-900/5 rounded-none">
         <div className="flex items-center gap-4 mb-6">
-          <div className="p-3 bg-gradient-to-br from-brown-50 to-brown-100 rounded-xl text-brown-600 shadow-inner">
+          <div className="p-3 bg-gradient-to-br from-brown-50 to-brown-100 rounded-none text-brown-600 ">
             <CreditCard className="h-6 w-6" />
           </div>
           <div>
@@ -68,10 +102,88 @@ export function StepIdentitas({ data, updateField }: Props) {
 
         <div className="space-y-4">
           <div className="space-y-2">
+            <Label>Apakah Menetap di Stasi Tertentu?</Label>
+            <div className="flex items-center gap-4 mt-1 mb-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="punya_stasi"
+                  checked={data.punya_stasi === true}
+                  onChange={() => {
+                    updateField("punya_stasi", true);
+                    updateField("stasi_id", "");
+                    updateField("target_kbg_id", "");
+                  }}
+                  className="w-4 h-4 text-brown-600 focus:ring-brown-600 border-slate-300"
+                />
+                <span className="text-sm font-medium">Ya, Punya Stasi</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="punya_stasi"
+                  checked={data.punya_stasi === false}
+                  onChange={() => {
+                    updateField("punya_stasi", false);
+                    updateField("stasi_id", "");
+                    updateField("target_kbg_id", "");
+                  }}
+                  className="w-4 h-4 text-brown-600 focus:ring-brown-600 border-slate-300"
+                />
+                <span className="text-sm font-medium">Tidak (Langsung Paroki)</span>
+              </label>
+            </div>
+          </div>
+
+          {data.punya_stasi === true && (
+            <div className="space-y-2">
+              <Label htmlFor="stasi_id">Pilih Stasi</Label>
+              <div className="relative">
+                <Building2 className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                <select
+                  id="stasi_id"
+                  className="flex h-10 w-full items-center justify-between rounded-none border border-slate-200 bg-white px-3 pl-10 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brown-600 focus:ring-offset-2"
+                  value={data.stasi_id || ""}
+                  onChange={(e) => {
+                    updateField("stasi_id", e.target.value);
+                    updateField("target_kbg_id", "");
+                  }}
+                >
+                  <option value="" disabled>-- Pilih Stasi --</option>
+                  {stasiList.map(s => (
+                    <option key={s.id} value={s.id}>{s.nama_stasi}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {data.punya_stasi === true && (
+            <div className="space-y-2">
+              <Label htmlFor="target_kbg_id">Pilih KBG</Label>
+              <div className="relative">
+                <Users className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                <select
+                  id="target_kbg_id"
+                  className="flex h-10 w-full items-center justify-between rounded-none border border-slate-200 bg-white px-3 pl-10 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brown-600 focus:ring-offset-2 disabled:opacity-50 disabled:bg-slate-50"
+                  value={data.target_kbg_id || ""}
+                  onChange={(e) => updateField("target_kbg_id", e.target.value)}
+                  disabled={data.punya_stasi === true && !data.stasi_id}
+                >
+                  <option value="" disabled>-- Pilih KBG --</option>
+                  {kbgList.map(k => (
+                    <option key={k.id} value={k.id}>{k.nama_kbg}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2 mt-4 border-t border-slate-100 pt-4">
             <Label htmlFor="no_kk_paroki">Nomor Kartu Keluarga (KK)</Label>
             <Input
               id="no_kk_paroki"
-              type="number"
+              type="text"
               placeholder="Masukkan nomor KK"
               value={data.no_kk_paroki || ""}
               onChange={(e) => updateField("no_kk_paroki", e.target.value)}
@@ -84,7 +196,7 @@ export function StepIdentitas({ data, updateField }: Props) {
               <Home className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
               <select
                 id="status_numpang"
-                className="flex h-10 w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 pl-10 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brown-600 focus:ring-offset-2"
+                className="flex h-10 w-full items-center justify-between rounded-none border border-slate-200 bg-white px-3 pl-10 py-2 text-sm ring-offset-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brown-600 focus:ring-offset-2"
                 value={data.status_numpang || ""}
                 onChange={(e) => updateField("status_numpang", e.target.value)}
               >
@@ -97,12 +209,38 @@ export function StepIdentitas({ data, updateField }: Props) {
               </select>
             </div>
           </div>
+
+          <div className="space-y-2">
+            <Label>Foto Kartu Keluarga (KK)</Label>
+            <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-slate-300 border-dashed rounded-none cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors relative overflow-hidden">
+              {data.kk_url_path ? (
+                <img
+                  src={data.kk_url_path}
+                  alt="Foto KK"
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <div className="p-3 bg-white rounded-full  mb-3">
+                    <Camera className="w-6 h-6 text-brown-600" />
+                  </div>
+                  <p className="text-sm text-slate-500 font-medium">Klik untuk upload foto KK</p>
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileUploadKK}
+              />
+            </label>
+          </div>
         </div>
       </Card>
 
-      <Card className="p-6 border-0 shadow-sm ring-1 ring-slate-900/5 rounded-md">
+      <Card className="p-6 border-0  ring-1 ring-slate-900/5 rounded-none">
         <div className="flex items-center gap-4 mb-6">
-          <div className="p-3 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl text-orange-600 shadow-inner">
+          <div className="p-3 bg-gradient-to-br from-orange-50 to-orange-100 rounded-none text-orange-600 ">
             <MapPin className="h-6 w-6" />
           </div>
           <div>
@@ -115,7 +253,7 @@ export function StepIdentitas({ data, updateField }: Props) {
           {/* Foto Rumah */}
           <div className="space-y-2">
             <Label>Foto Rumah</Label>
-            <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-slate-300 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors relative overflow-hidden">
+            <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-slate-300 border-dashed rounded-none cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors relative overflow-hidden">
               {data.foto_rumah_path ? (
                 <img
                   src={data.foto_rumah_path}
@@ -124,7 +262,7 @@ export function StepIdentitas({ data, updateField }: Props) {
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <div className="p-3 bg-white rounded-full shadow-sm mb-3">
+                  <div className="p-3 bg-white rounded-full  mb-3">
                     <Camera className="w-6 h-6 text-brown-600" />
                   </div>
                   <p className="text-sm text-slate-500 font-medium">Klik untuk upload foto</p>
@@ -145,14 +283,14 @@ export function StepIdentitas({ data, updateField }: Props) {
             
             <div 
               onClick={() => setIsMapOpen(true)}
-              className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all hover:shadow-md ${
+              className={`flex items-center justify-between p-4 rounded-none border cursor-pointer transition-all hover: ${
                 hasGps ? "bg-blue-50/40 border-blue-200 hover:border-blue-300" : "bg-white border-slate-200 hover:border-blue-300"
               }`}
             >
               <div className="flex items-center gap-4">
                 <div
                   className={`p-3 rounded-full transition-colors ${
-                    hasGps ? "bg-blue-500 text-white shadow-md shadow-blue-500/20" : "bg-slate-100 text-slate-500"
+                    hasGps ? "bg-blue-500 text-white  " : "bg-slate-100 text-slate-500"
                   }`}
                 >
                   <Map className="h-5 w-5" />
@@ -190,3 +328,4 @@ export function StepIdentitas({ data, updateField }: Props) {
     </div>
   );
 }
+

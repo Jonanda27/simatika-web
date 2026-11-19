@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useMemo } from "react";
+import { usePathname } from "next/navigation";
 import { Users, Layers, Info, Map } from "lucide-react";
 import { useGisUmatStore } from "@/store/useGisUmatStore";
 import { GisPanelType } from "@/types/gis";
@@ -9,20 +10,30 @@ import { GisPanelType } from "@/types/gis";
 export default function GisSidebar() {
     const { openPanel, activePanels, closePanelsToTheRight } = useGisUmatStore();
 
-    const navigationItems = useMemo(() => [
-        {
-            type: "katalog-keluarga" as GisPanelType,
-            label: "Umat",
-            icon: Users,
-            title: "Katalog & Pencarian Keluarga"
-        },
-        {
+    const pathname = usePathname();
+    const isPetaParoki = pathname === "/peta-paroki";
+
+    const navigationItems = useMemo(() => {
+        const items = [];
+        
+        // Peta Paroki dan Peta Stasi keduanya menggunakan Katalog Wilayah
+        // agar menampilkan hierarki Stasi -> KBG -> Keluarga
+        items.push({
+            type: "katalog-wilayah" as GisPanelType,
+            label: "Wilayah",
+            icon: Map,
+            title: "Katalog & Pencarian Wilayah"
+        });
+        
+        items.push({
             type: "basemap-layer" as GisPanelType,
             label: "Lapisan",
             icon: Layers,
             title: "Konfigurasi Lapisan Peta"
-        }
-    ], []);
+        });
+        
+        return items;
+    }, []);
 
     const isPanelActive = (type: GisPanelType) => {
         return activePanels.some(p => p.type === type);

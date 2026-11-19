@@ -18,7 +18,7 @@ export default function BoundaryMaskLayer() {
     useEffect(() => {
         let isMounted = true;
 
-        fetch("/mimika_18_distrik.json")
+        fetch("/LapakGIS_Batas_Kelurahan_Desa_2024.json")
             .then((res) => {
                 if (!res.ok) throw new Error("File batas wilayah tidak ditemukan.");
                 return res.json();

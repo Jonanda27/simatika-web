@@ -17,6 +17,10 @@ interface GisUmatState {
     markerMode: MarkerMode;     // Mode visualisasi titik keluarga (Ekonomi/Sakramen/Default)
 
     selectedFamilyId: string | null; // ID keluarga yang sedang di-klik/difokuskan
+    selectedKbgId: string | null; // ID KBG yang sedang di-klik
+    selectedStasiId: string | null; // ID Stasi yang sedang di-klik
+    
+    stasiFilterMode: 'all' | 'has_stasi' | 'no_stasi';
 
     // Koordinat & Zoom Global (Single Source of Truth)
     mapCenter: [number, number];
@@ -38,6 +42,10 @@ interface GisUmatState {
     setActiveBaseMap: (baseMap: BasemapType) => void;
     setMarkerMode: (mode: MarkerMode) => void;
     setSelectedFamilyId: (id: string | null) => void;
+    setSelectedKbgId: (id: string | null) => void;
+    setSelectedStasiId: (id: string | null) => void;
+    
+    setStasiFilterMode: (mode: 'all' | 'has_stasi' | 'no_stasi') => void;
 
     // Aksi Pengubah Koordinat & Zoom Peta secara Global
     setMapCenter: (center: [number, number]) => void;
@@ -57,7 +65,10 @@ export const useGisUmatStore = create<GisUmatState>((set) => ({
     maskOpacity: 60, // Gelapkan area di luar batas Paroki sebesar 60%
     activeBaseMap: 'dark', // Peta gelap bagus untuk visualisasi titik
     markerMode: 'default',
+    stasiFilterMode: 'all',
     selectedFamilyId: null,
+    selectedKbgId: null,
+    selectedStasiId: null,
     mapCenter: DEFAULT_CENTER,
     mapZoom: DEFAULT_ZOOM,
 
@@ -72,7 +83,8 @@ export const useGisUmatStore = create<GisUmatState>((set) => ({
             // Aturan Eksklusivitas (Mutually Exclusive)
             if (isDetailPanel) {
                 // Jika buka detail keluarga, tutup detail keluarga lama agar tidak tumpang tindih
-                nextPanels = nextPanels.filter((p) => p.type !== "detil-keluarga");
+                // DAN tutup panel katalog keluarga (jika ada) sesuai request UX
+                nextPanels = nextPanels.filter((p) => p.type !== "detil-keluarga" && p.type !== "katalog-keluarga");
             } else {
                 // Jika buka panel menu utama (katalog, basemap), bersihkan panel melayang
                 nextPanels = nextPanels.filter((p) => p.type !== "detil-keluarga");
@@ -136,6 +148,9 @@ export const useGisUmatStore = create<GisUmatState>((set) => ({
     setMarkerMode: (markerMode) => set({ markerMode }),
 
     setSelectedFamilyId: (id) => set({ selectedFamilyId: id }),
+    setSelectedKbgId: (id) => set({ selectedKbgId: id }),
+    setSelectedStasiId: (id) => set({ selectedStasiId: id }),
+    setStasiFilterMode: (mode) => set({ stasiFilterMode: mode }),
 
     setMapCenter: (center) => set({ mapCenter: center }),
     setMapZoom: (zoom) => set({ mapZoom: zoom }),
@@ -144,10 +159,13 @@ export const useGisUmatStore = create<GisUmatState>((set) => ({
         set({
             activePanels: [],
             selectedFamilyId: null,
+            selectedKbgId: null,
+            selectedStasiId: null,
             mapOpacity: 100,
             maskOpacity: 60,
             activeBaseMap: 'dark',
             markerMode: 'default',
+            stasiFilterMode: 'all',
             mapCenter: DEFAULT_CENTER,
             mapZoom: DEFAULT_ZOOM,
         }),

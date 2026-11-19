@@ -13,9 +13,6 @@ import { useGisUmatStore } from "@/store/useGisUmatStore";
 // 1. IMPORT DARI PURE FABRICATION UTILS (Logika Warna Dipisah)
 import { createPolymorphicMarker, createClusterIcon } from "../utils/gisColorMath";
 
-// 2. IMPORT MOCK DATA (Untuk Testing UI)
-import { dummyKeluargaGis } from "@/lib/dummyGisData";
-
 // Helper internal untuk ekstrak Kepala Keluarga
 const getKepalaKeluarga = (umats?: any[]) => {
     return umats?.find((u) => u.status_dalam_keluarga === 'KK')?.nama_lengkap
@@ -47,14 +44,11 @@ export default function FamilyMarkerLayer() {
                 // Tarik data dengan limit besar khusus untuk pemetaan koordinat
                 const res = await keluargaService.getAll({ limit: 5000 });
                 if (isMounted && res.success) {
-                    // MENGGABUNGKAN DATA RIIL API + MOCK DATA DUMMY
-                    const combinedData = [...res.data, ...dummyKeluargaGis];
-                    setFamilies(combinedData);
+                    setFamilies(res.data);
                 }
             } catch (error) {
                 console.error("Gagal menarik data titik koordinat:", error);
-                // JIKA API MATI/GAGAL, TETAP TAMPILKAN MOCK DATA
-                if (isMounted) setFamilies(dummyKeluargaGis);
+                if (isMounted) setFamilies([]);
             } finally {
                 if (isMounted) setIsLoading(false);
             }

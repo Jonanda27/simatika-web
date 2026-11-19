@@ -7,6 +7,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MapPin, Home, Users, CheckCircle, XCircle, AlertCircle, User } from "lucide-react";
 import { VerificationData } from "@/types/verification";
+import dynamic from "next/dynamic";
+
+const MapDisplay = dynamic(() => import("@/components/map/MapDisplay"), { ssr: false, loading: () => <div className="w-full h-48 bg-slate-100 flex items-center justify-center animate-pulse">Memuat Peta...</div> });
+
+const getImagePreviewUrl = (url: string) => {
+  if (!url) return '';
+  if (url.includes('cloudinary.com')) {
+    // Mengubah ekstensi menjadi .jpg agar Cloudinary otomatis melakukan konversi halaman pertama PDF menjadi gambar
+    if (url.toLowerCase().endsWith('.pdf')) {
+      return url.substring(0, url.length - 4) + '.jpg';
+    }
+    const lastPart = url.split('/').pop();
+    if (lastPart && !lastPart.includes('.')) {
+      return url + '.jpg';
+    }
+  }
+  return url;
+};
 
 export interface VerifikasiDetailModalProps {
   open: boolean;
@@ -45,7 +63,7 @@ export function VerifikasiDetailModal({
     <>
     {/* Detail Modal */}
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-6xl w-[98vw] h-[95vh] sm:h-[85vh] p-0 flex flex-col overflow-hidden bg-white rounded-xl shadow-2xl border-0">
+      <DialogContent className="sm:max-w-6xl w-[98vw] h-[95vh] sm:h-[85vh] p-0 flex flex-col overflow-hidden bg-white rounded-none shadow-2xl border-0">
         {selectedItem && (
           <div className="flex flex-col sm:flex-row h-full overflow-hidden">
             
@@ -62,7 +80,9 @@ export function VerifikasiDetailModal({
                 <h2 className="text-xl font-bold text-slate-900 leading-tight">
                   {selectedItem.payload_data.type === 'KEPENGURUSAN' 
                     ? `SK Pengurus KBG`
-                    : `Kel. ${selectedItem.payload_data.members?.[0]?.nama_lengkap || 'Tanpa Nama'}`
+                    : selectedItem.payload_data.type === 'PECAH_KK'
+                      ? `Pecah KK: ${selectedItem.payload_data.members?.[0]?.nama_lengkap || 'Tanpa Nama'}`
+                      : `Kel. ${selectedItem.payload_data.members?.[0]?.nama_lengkap || 'Tanpa Nama'}`
                   }
                 </h2>
                 <p className="text-sm text-slate-500 mt-1">
@@ -77,13 +97,13 @@ export function VerifikasiDetailModal({
                   <>
                     <button 
                       onClick={() => setActiveModalSection('ringkasan')}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeModalSection === 'ringkasan' ? 'bg-brown-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}`}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-none text-sm font-medium transition-colors ${activeModalSection === 'ringkasan' ? 'bg-brown-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}`}
                     >
                       <AlertCircle className="w-4 h-4" /> Ringkasan SK
                     </button>
                     <button 
                       onClick={() => setActiveModalSection('anggota')}
-                      className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeModalSection === 'anggota' ? 'bg-brown-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}`}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-none text-sm font-medium transition-colors ${activeModalSection === 'anggota' ? 'bg-brown-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}`}
                     >
                       <div className="flex items-center gap-3"><Users className="w-4 h-4" /> Susunan Pengurus</div>
                       <Badge variant="secondary" className={`${activeModalSection === 'anggota' ? 'bg-brown-500 text-white' : 'bg-slate-200 text-slate-700'}`}>
@@ -95,25 +115,25 @@ export function VerifikasiDetailModal({
                   <>
                     <button 
                       onClick={() => setActiveModalSection('ringkasan')}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeModalSection === 'ringkasan' ? 'bg-brown-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}`}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-none text-sm font-medium transition-colors ${activeModalSection === 'ringkasan' ? 'bg-brown-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}`}
                     >
                       <AlertCircle className="w-4 h-4" /> Ringkasan
                     </button>
                     <button 
                       onClick={() => setActiveModalSection('rumah')}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeModalSection === 'rumah' ? 'bg-brown-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}`}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-none text-sm font-medium transition-colors ${activeModalSection === 'rumah' ? 'bg-brown-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}`}
                     >
                       <Home className="w-4 h-4" /> Ekonomi & Rumah
                     </button>
                     <button 
                       onClick={() => setActiveModalSection('lokasi')}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeModalSection === 'lokasi' ? 'bg-brown-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}`}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-none text-sm font-medium transition-colors ${activeModalSection === 'lokasi' ? 'bg-brown-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}`}
                     >
                       <MapPin className="w-4 h-4" /> Lokasi & Foto
                     </button>
                     <button 
                       onClick={() => setActiveModalSection('anggota')}
-                      className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium transition-colors ${activeModalSection === 'anggota' ? 'bg-brown-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}`}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-none text-sm font-medium transition-colors ${activeModalSection === 'anggota' ? 'bg-brown-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-200/50'}`}
                     >
                       <div className="flex items-center gap-3"><Users className="w-4 h-4" /> Anggota</div>
                       <Badge variant="secondary" className={`${activeModalSection === 'anggota' ? 'bg-brown-500 text-white' : 'bg-slate-200 text-slate-700'}`}>
@@ -127,7 +147,7 @@ export function VerifikasiDetailModal({
               <div className="p-4 border-t border-slate-200 bg-slate-100/50">
                 <div className="text-xs text-slate-500 uppercase tracking-wider font-semibold mb-2">Info Penginput</div>
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-brown-200 text-brown-700 flex items-center justify-center font-bold text-xs">
+                  <div className="w-8 h-8 rounded-none bg-brown-200 text-brown-700 flex items-center justify-center font-bold text-xs">
                     {selectedItem.User?.username?.substring(0,2).toUpperCase() || 'U'}
                   </div>
                   <div>
@@ -157,12 +177,12 @@ export function VerifikasiDetailModal({
                     {selectedItem.payload_data.type === 'KEPENGURUSAN' ? (
                       <>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="p-5 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-sm">
+                          <div className="p-5 rounded-none border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-sm">
                             <Users className="w-8 h-8 text-brown-500 mb-3" />
                             <div className="text-3xl font-black text-slate-800">{selectedItem.payload_data.pengurus?.length || 0}</div>
                             <div className="text-sm font-medium text-slate-500 mt-1">Total Pengurus</div>
                           </div>
-                          <div className="p-5 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-sm">
+                          <div className="p-5 rounded-none border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-sm">
                             <CheckCircle className="w-8 h-8 text-emerald-500 mb-3" />
                             <div className="text-3xl font-black text-slate-800">{selectedItem.payload_data.periode_mulai}</div>
                             <div className="text-sm font-medium text-slate-500 mt-1">Tahun Mulai Menjabat</div>
@@ -170,16 +190,16 @@ export function VerifikasiDetailModal({
                         </div>
 
                         {selectedItem.payload_data.sk_url ? (
-                          <div className="bg-blue-50 border border-blue-200 p-5 rounded-2xl text-blue-900 leading-relaxed flex flex-col items-center">
+                          <div className="bg-blue-50 border border-blue-200 p-5 rounded-none text-blue-900 leading-relaxed flex flex-col items-center">
                             <div className="font-bold mb-3 flex items-center gap-2">
                               <AlertCircle className="w-5 h-5 text-blue-600" /> Dokumen SK Terlampir
                             </div>
-                            <a href={selectedItem.payload_data.sk_url} target="_blank" rel="noreferrer" className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                            <a href={selectedItem.payload_data.sk_url} target="_blank" rel="noreferrer" className="px-6 py-2 bg-blue-600 text-white font-medium rounded-none hover:bg-blue-700 transition-colors">
                               Lihat SK Pengangkatan
                             </a>
                           </div>
                         ) : (
-                          <div className="bg-amber-50 border border-amber-200 p-5 rounded-2xl text-amber-900 leading-relaxed flex items-center gap-3">
+                          <div className="bg-amber-50 border border-amber-200 p-5 rounded-none text-amber-900 leading-relaxed flex items-center gap-3">
                             <AlertCircle className="w-6 h-6 text-amber-600 shrink-0" />
                             <div>
                               <strong>Peringatan:</strong> Tidak ada file SK Pengangkatan yang dilampirkan. Pastikan struktur ini memang sah sebelum menyetujuinya.
@@ -190,22 +210,32 @@ export function VerifikasiDetailModal({
                     ) : (
                       <>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="p-5 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-sm">
+                          <div className="p-5 rounded-none border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-sm">
                             <Users className="w-8 h-8 text-brown-500 mb-3" />
                             <div className="text-3xl font-black text-slate-800">{selectedItem.payload_data.members?.length || 0}</div>
                             <div className="text-sm font-medium text-slate-500 mt-1">Total Anggota Keluarga</div>
                           </div>
-                          <div className="p-5 rounded-2xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-sm">
+                          <div className="p-5 rounded-none border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-sm">
                             <Home className="w-8 h-8 text-emerald-500 mb-3" />
                             <div className="text-3xl font-black text-slate-800 capitalize">{selectedItem.payload_data.status_rumah || '-'}</div>
                             <div className="text-sm font-medium text-slate-500 mt-1">Status Kepemilikan Rumah</div>
                           </div>
                         </div>
 
-                        <div className="bg-brown-50 border border-brown-200 p-5 rounded-2xl text-brown-900 leading-relaxed">
+                        <div className="bg-brown-50 border border-brown-200 p-5 rounded-none text-brown-900 leading-relaxed">
                           <strong>Tugas Anda:</strong> Mohon periksa keabsahan foto rumah, kelengkapan surat sakramen pada setiap anggota keluarga, dan validitas domisili sebelum melakukan persetujuan.
                           {userRole === 'ADMIN_PAROKI' && " Data ini telah lolos verifikasi dari Admin Stasi."}
                         </div>
+
+                        {selectedItem.payload_data.type === 'PECAH_KK' && (
+                          <div className="bg-blue-50 border border-blue-200 p-5 rounded-none text-blue-900 leading-relaxed flex gap-3 items-start mt-4">
+                            <AlertCircle className="w-6 h-6 text-blue-600 shrink-0 mt-0.5" />
+                            <div>
+                              <strong className="block mb-1">Mutasi Pecah KK / Pindah Keluarga</strong>
+                              Pengajuan ini adalah pemecahan dari Kartu Keluarga lama. Ketika Anda menekan Approve, sistem akan secara otomatis memindahkan anggota ini dari KK sebelumnya ke KK yang baru ini.
+                            </div>
+                          </div>
+                        )}
                       </>
                     )}
                   </div>
@@ -219,7 +249,7 @@ export function VerifikasiDetailModal({
                       <p className="text-slate-500 mt-1">Informasi Nomor KK, status hunian, dan pendapatan.</p>
                     </div>
 
-                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="bg-white rounded-none border border-slate-200 shadow-sm overflow-hidden">
                       <table className="w-full text-sm text-left">
                         <tbody className="divide-y divide-slate-100">
                           <tr className="hover:bg-slate-50/50">
@@ -262,21 +292,23 @@ export function VerifikasiDetailModal({
                   <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                     <div>
                       <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Lokasi & Foto Bukti</h3>
-                      <p className="text-slate-500 mt-1">Koordinat domisili dan foto fisik rumah dari lapangan.</p>
+                      <p className="text-slate-500 mt-1">Koordinat domisili, foto fisik rumah, dan dokumen KK.</p>
                     </div>
 
                     <div className="flex gap-4">
-                      <div className="flex-1 p-4 rounded-xl border border-slate-200 bg-slate-50">
-                        <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Latitude</div>
-                        <div className="font-mono text-slate-800 break-all">{selectedItem.payload_data.lat || 'Tidak dilampirkan'}</div>
-                      </div>
-                      <div className="flex-1 p-4 rounded-xl border border-slate-200 bg-slate-50">
-                        <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Longitude</div>
-                        <div className="font-mono text-slate-800 break-all">{selectedItem.payload_data.lng || 'Tidak dilampirkan'}</div>
-                      </div>
+                      {selectedItem.payload_data.lat && selectedItem.payload_data.lng ? (
+                        <div className="w-full h-[400px] rounded-none border border-slate-200 overflow-hidden">
+                          <MapDisplay lat={Number(selectedItem.payload_data.lat)} lng={Number(selectedItem.payload_data.lng)} />
+                        </div>
+                      ) : (
+                        <div className="flex-1 p-4 rounded-none border border-slate-200 bg-slate-50 text-center text-slate-500">
+                          Tidak ada koordinat GPS dilampirkan
+                        </div>
+                      )}
                     </div>
 
-                    <div className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-100 shadow-inner group relative">
+                    <h4 className="font-bold mt-8 mb-2 text-slate-800">Foto Fisik Rumah</h4>
+                    <div className="rounded-none border border-slate-200 overflow-hidden bg-slate-100 shadow-inner group relative">
                       {selectedItem.payload_data.foto_rumah_url ? (
                         <>
                           <img 
@@ -292,6 +324,29 @@ export function VerifikasiDetailModal({
                         <div className="flex flex-col items-center justify-center p-20 text-slate-400">
                           <Home className="w-16 h-16 mb-4 opacity-20" />
                           <p className="font-medium text-lg text-slate-500">Tidak ada foto dilampirkan</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <h4 className="font-bold mt-8 mb-2 text-slate-800">Foto Kartu Keluarga (KK)</h4>
+                    <div className="rounded-none border border-slate-200 overflow-hidden bg-slate-100 shadow-inner group relative">
+                      {selectedItem.payload_data.kk_url ? (
+                        <div className="relative group w-full h-[500px] bg-slate-900 flex items-center justify-center">
+                          <img 
+                            src={getImagePreviewUrl(selectedItem.payload_data.kk_url)} 
+                            className="max-w-full max-h-full object-contain" 
+                            alt="Dokumen KK"
+                          />
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
+                            <a href={selectedItem.payload_data.kk_url} target="_blank" rel="noreferrer" className="px-6 py-2 bg-white text-slate-900 rounded-none font-bold text-sm hover:bg-slate-100 transition-colors">
+                              Buka Dokumen Asli
+                            </a>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center p-20 text-slate-400">
+                          <AlertCircle className="w-16 h-16 mb-4 opacity-20" />
+                          <p className="font-medium text-lg text-slate-500">Tidak ada lampiran foto KK</p>
                         </div>
                       )}
                     </div>
@@ -312,12 +367,12 @@ export function VerifikasiDetailModal({
                     <div className="space-y-4">
                       {selectedItem.payload_data.type === 'KEPENGURUSAN' ? (
                         selectedItem.payload_data.pengurus?.map((p: any, i: number) => (
-                          <div key={i} className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm p-5 flex flex-col sm:flex-row justify-between gap-4">
+                          <div key={i} className="rounded-none border border-slate-200 bg-white overflow-hidden shadow-sm p-5 flex flex-col sm:flex-row justify-between gap-4">
                             <div>
                               <h4 className="text-lg font-bold text-slate-900">{p.nama}</h4>
                               <p className="text-sm text-slate-500 mt-1 font-medium">{p.jabatan}</p>
                             </div>
-                            <div className="flex items-center gap-2 text-slate-600 bg-slate-50 px-4 py-2 rounded-lg border border-slate-100">
+                            <div className="flex items-center gap-2 text-slate-600 bg-slate-50 px-4 py-2 rounded-none border border-slate-100">
                               <User className="w-4 h-4" />
                               <span className="text-sm font-medium">{p.telepon || 'Tidak ada no. telp'}</span>
                             </div>
@@ -325,7 +380,7 @@ export function VerifikasiDetailModal({
                         ))
                       ) : (
                         selectedItem.payload_data.members?.map((m: any, i: number) => (
-                        <div key={i} className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                        <div key={i} className="rounded-none border border-slate-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                           <div className={`h-2 w-full ${m.status_dalam_keluarga === 'KK' ? 'bg-brown-500' : 'bg-slate-200'}`}></div>
                           <div className="p-5 sm:p-6">
                             <div className="flex flex-col sm:flex-row justify-between gap-4">
@@ -334,6 +389,9 @@ export function VerifikasiDetailModal({
                                   <h4 className="text-xl font-bold text-slate-900">{m.nama_lengkap}</h4>
                                   {m.status_dalam_keluarga === 'KK' && (
                                     <Badge variant="secondary" className="bg-brown-100 text-brown-800 border-brown-200">Kepala Keluarga</Badge>
+                                  )}
+                                  {m.nomor_induk_umat && (
+                                    <Badge variant="outline" className="rounded-none font-mono text-slate-600 bg-slate-50 border-slate-200 text-xs py-0 h-5 px-2">{m.nomor_induk_umat}</Badge>
                                   )}
                                 </div>
                                 <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
@@ -351,7 +409,7 @@ export function VerifikasiDetailModal({
                                 {m.has_krisma && <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-0">Krisma</Badge>}
                                 {m.has_perkawinan && <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-200 border-0">Kawin</Badge>}
                                 {!m.has_baptis && !m.has_komuni && !m.has_krisma && !m.has_perkawinan && (
-                                  <span className="text-sm italic text-slate-400 px-2 py-1 bg-slate-50 rounded border border-slate-100">Belum ada sakramen</span>
+                                  <span className="text-sm italic text-slate-400 px-2 py-1 bg-slate-50 rounded-none border border-slate-100">Belum ada sakramen</span>
                                 )}
                               </div>
                             </div>
@@ -384,47 +442,99 @@ export function VerifikasiDetailModal({
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                   
                                   {m.has_baptis && (
-                                    <div className="bg-brown-50/50 p-3 rounded-lg border border-brown-100">
+                                    <div className="bg-brown-50/50 p-3 rounded-none border border-brown-100">
                                       <div className="font-semibold text-brown-800 text-sm mb-2 border-b border-brown-100 pb-1">Baptis</div>
                                       <div className="grid grid-cols-1 gap-1 text-xs text-slate-600">
                                         <div><span className="text-slate-400">No:</span> {m.baptis_no_surat || '-'}</div>
                                         <div><span className="text-slate-400">Tgl:</span> {m.baptis_tgl || '-'}</div>
                                         <div><span className="text-slate-400">Gereja:</span> {m.baptis_tempat || '-'}</div>
                                         <div><span className="text-slate-400">Oleh:</span> {m.baptis_pastor || '-'}</div>
+                                        {m.baptis_sertifikat_url && (
+                                          <div className="mt-3 col-span-1 sm:col-span-2 border-t border-brown-100 pt-2">
+                                            <div className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> Preview Sertifikat</div>
+                                            <div className="relative group w-full h-[400px] bg-slate-900 rounded-none border border-slate-200 flex items-center justify-center overflow-hidden">
+                                              <img src={getImagePreviewUrl(m.baptis_sertifikat_url)} className="max-w-full max-h-full object-contain" alt="Sertifikat Baptis" />
+                                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
+                                                <a href={m.baptis_sertifikat_url} target="_blank" rel="noreferrer" className="px-6 py-2 bg-white text-slate-900 rounded-none font-bold text-sm hover:bg-slate-100 transition-colors">
+                                                  Buka Dokumen Asli
+                                                </a>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                   )}
 
                                   {m.has_komuni && (
-                                    <div className="bg-purple-50/50 p-3 rounded-lg border border-purple-100">
+                                    <div className="bg-purple-50/50 p-3 rounded-none border border-purple-100">
                                       <div className="font-semibold text-purple-800 text-sm mb-2 border-b border-purple-100 pb-1">Komuni Pertama</div>
                                       <div className="grid grid-cols-1 gap-1 text-xs text-slate-600">
                                         <div><span className="text-slate-400">Tgl:</span> {m.komuni_tgl || '-'}</div>
                                         <div><span className="text-slate-400">Gereja:</span> {m.komuni_tempat || '-'}</div>
+                                        {m.komuni_sertifikat_url && (
+                                          <div className="mt-3 col-span-1 sm:col-span-2 border-t border-purple-100 pt-2">
+                                            <div className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> Preview Sertifikat</div>
+                                            <div className="relative group w-full h-[400px] bg-slate-900 rounded-none border border-slate-200 flex items-center justify-center overflow-hidden">
+                                              <img src={getImagePreviewUrl(m.komuni_sertifikat_url)} className="max-w-full max-h-full object-contain" alt="Sertifikat Komuni" />
+                                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
+                                                <a href={m.komuni_sertifikat_url} target="_blank" rel="noreferrer" className="px-6 py-2 bg-white text-slate-900 rounded-none font-bold text-sm hover:bg-slate-100 transition-colors">
+                                                  Buka Dokumen Asli
+                                                </a>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                   )}
 
                                   {m.has_krisma && (
-                                    <div className="bg-emerald-50/50 p-3 rounded-lg border border-emerald-100">
+                                    <div className="bg-emerald-50/50 p-3 rounded-none border border-emerald-100">
                                       <div className="font-semibold text-emerald-800 text-sm mb-2 border-b border-emerald-100 pb-1">Krisma</div>
                                       <div className="grid grid-cols-1 gap-1 text-xs text-slate-600">
                                         <div><span className="text-slate-400">No:</span> {m.krisma_no_surat || '-'}</div>
                                         <div><span className="text-slate-400">Tgl:</span> {m.krisma_tgl || '-'}</div>
                                         <div><span className="text-slate-400">Gereja:</span> {m.krisma_tempat || '-'}</div>
                                         <div><span className="text-slate-400">Oleh:</span> {m.krisma_pastor || '-'}</div>
+                                        {m.krisma_sertifikat_url && (
+                                          <div className="mt-3 col-span-1 sm:col-span-2 border-t border-emerald-100 pt-2">
+                                            <div className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> Preview Sertifikat</div>
+                                            <div className="relative group w-full h-[400px] bg-slate-900 rounded-none border border-slate-200 flex items-center justify-center overflow-hidden">
+                                              <img src={getImagePreviewUrl(m.krisma_sertifikat_url)} className="max-w-full max-h-full object-contain" alt="Sertifikat Krisma" />
+                                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
+                                                <a href={m.krisma_sertifikat_url} target="_blank" rel="noreferrer" className="px-6 py-2 bg-white text-slate-900 rounded-none font-bold text-sm hover:bg-slate-100 transition-colors">
+                                                  Buka Dokumen Asli
+                                                </a>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                   )}
 
                                   {m.has_perkawinan && (
-                                    <div className="bg-amber-50/50 p-3 rounded-lg border border-amber-100">
+                                    <div className="bg-amber-50/50 p-3 rounded-none border border-amber-100">
                                       <div className="font-semibold text-amber-800 text-sm mb-2 border-b border-amber-100 pb-1">Perkawinan</div>
                                       <div className="grid grid-cols-1 gap-1 text-xs text-slate-600">
                                         <div><span className="text-slate-400">No:</span> {m.kawin_no_surat || '-'}</div>
                                         <div><span className="text-slate-400">Tgl:</span> {m.kawin_tgl || '-'}</div>
                                         <div><span className="text-slate-400">Gereja:</span> {m.kawin_tempat || '-'}</div>
                                         <div><span className="text-slate-400">Oleh:</span> {m.kawin_pastor || '-'}</div>
+                                        {m.nikah_sertifikat_url && (
+                                          <div className="mt-3 col-span-1 sm:col-span-2 border-t border-amber-100 pt-2">
+                                            <div className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> Preview Sertifikat</div>
+                                            <div className="relative group w-full h-[400px] bg-slate-900 rounded-none border border-slate-200 flex items-center justify-center overflow-hidden">
+                                              <img src={getImagePreviewUrl(m.nikah_sertifikat_url)} className="max-w-full max-h-full object-contain" alt="Sertifikat Perkawinan" />
+                                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity duration-200">
+                                                <a href={m.nikah_sertifikat_url} target="_blank" rel="noreferrer" className="px-6 py-2 bg-white text-slate-900 rounded-none font-bold text-sm hover:bg-slate-100 transition-colors">
+                                                  Buka Dokumen Asli
+                                                </a>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
                                   )}
@@ -453,60 +563,63 @@ export function VerifikasiDetailModal({
                 <div className="h-20"></div> {/* Bottom spacing for sticky footer */}
               </div>
 
-              {/* Sticky Action Footer */}
-              <div className="border-t border-slate-200 bg-white p-4 sm:p-6 mt-auto">
-                
-                {/* Reject Reason Input */}
-                <div className="mb-6 max-w-2xl bg-red-50 p-4 rounded-xl border border-red-100">
-                  <label className="text-sm font-bold text-red-900 flex items-center gap-2 mb-2">
-                    <XCircle className="w-4 h-4 text-red-600" />
-                    Alasan Penolakan <span className="text-red-500 font-normal opacity-80">(Opsional, wajib jika Anda menolak)</span>
-                  </label>
-                  <Input 
-                    placeholder="Ketikan alasan kenapa data ini ditolak (cth: Foto tidak jelas)..." 
-                    className="border-red-200 focus-visible:ring-red-500 bg-white placeholder:text-slate-400"
-                    value={rejectReason}
-                    onChange={(e) => setRejectReason(e.target.value)}
-                  />
-                </div>
-
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                  <Button 
-                    variant="outline" 
-                    onClick={handleLocalReject}
-                    disabled={actionLoading}
-                    className="w-full sm:w-auto border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 h-12 px-6 rounded-xl font-bold"
-                  >
-                    <XCircle className="w-5 h-5 mr-2" /> Tolak Data
-                  </Button>
+                {/* Sticky Action Footer */}
+              {userRole !== 'KETUA_KBG' && userRole !== 'VIEW_ONLY' && selectedItem.status !== 'APPROVED_PAROKI' && selectedItem.status !== 'REJECTED' && (
+                <div className="border-t border-slate-200 bg-white p-4 sm:p-6 mt-auto">
                   
-                  <div className="flex flex-col-reverse sm:flex-row w-full sm:w-auto gap-3">
-                    <Button variant="ghost" onClick={() => onClose()} className="h-12 px-6 rounded-xl font-medium w-full sm:w-auto">Batalkan</Button>
-                    
-                    {userRole !== 'ADMIN_PAROKI' && selectedItem?.status === 'PENDING' && selectedItem.payload_data.type !== 'KEPENGURUSAN' && (
-                      <Button 
-                        onClick={onVerifyStasi}
-                        disabled={actionLoading}
-                        className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/30 h-12 px-8 rounded-xl font-bold text-base"
-                      >
-                        <CheckCircle className="w-5 h-5 mr-2" />
-                        Setujui & Verifikasi (Stasi)
-                      </Button>
-                    )}
+                  {/* Reject Reason Input */}
+                  <div className="mb-6 max-w-2xl bg-red-50 p-4 rounded-none border border-red-100">
+                    <label className="text-sm font-bold text-red-900 flex items-center gap-2 mb-2">
+                      <XCircle className="w-4 h-4 text-red-600" />
+                      Alasan Penolakan <span className="text-red-500 font-normal opacity-80">(Opsional, wajib jika Anda menolak)</span>
+                    </label>
+                    <Input 
+                      placeholder="Ketikan alasan kenapa data ini ditolak (cth: Foto tidak jelas)..." 
+                      className="border-red-200 focus-visible:ring-red-500 bg-white placeholder:text-slate-400"
+                      value={rejectReason}
+                      onChange={(e) => setRejectReason(e.target.value)}
+                    />
+                  </div>
 
-                    {userRole === 'ADMIN_PAROKI' && (selectedItem?.status === 'VERIFIED_STASI' || (selectedItem?.payload_data.type === 'KEPENGURUSAN' && selectedItem?.status === 'PENDING')) && (
-                      <Button 
-                        onClick={onApproveParoki}
-                        disabled={actionLoading}
-                        className="w-full sm:w-auto bg-brown-600 hover:bg-brown-700 text-white shadow-lg shadow-brown-600/30 h-12 px-8 rounded-xl font-bold text-base"
-                      >
-                        <CheckCircle className="w-5 h-5 mr-2" />
-                        Approve Final (Paroki)
-                      </Button>
-                    )}
+                  <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <Button 
+                      variant="outline" 
+                      onClick={handleLocalReject}
+                      disabled={actionLoading}
+                      className="w-full sm:w-auto border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 h-12 px-6 rounded-none font-bold"
+                    >
+                      <XCircle className="w-5 h-5 mr-2" /> Tolak Data
+                    </Button>
+                    
+                    <div className="flex flex-col-reverse sm:flex-row w-full sm:w-auto gap-3">
+                      <Button variant="ghost" onClick={() => onClose()} className="h-12 px-6 rounded-none font-medium w-full sm:w-auto">Batalkan</Button>
+                      
+                      {userRole !== 'ADMIN_PAROKI' && selectedItem?.status === 'PENDING' && selectedItem.payload_data.type !== 'KEPENGURUSAN' && (
+                        <Button 
+                          onClick={onVerifyStasi}
+                          disabled={actionLoading}
+                          className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/30 h-12 px-8 rounded-none font-bold text-base"
+                        >
+                          <CheckCircle className="w-5 h-5 mr-2" />
+                          Setujui & Verifikasi (Stasi)
+                        </Button>
+                      )}
+
+                      {userRole === 'ADMIN_PAROKI' && (selectedItem?.status === 'VERIFIED_STASI' || (selectedItem?.payload_data.type === 'KEPENGURUSAN' && selectedItem?.status === 'PENDING')) && (
+                        <Button 
+                          onClick={onApproveParoki}
+                          disabled={actionLoading}
+                          className="w-full sm:w-auto bg-brown-600 hover:bg-brown-700 text-white shadow-lg shadow-brown-600/30 h-12 px-8 rounded-none font-bold text-base"
+                        >
+                          <CheckCircle className="w-5 h-5 mr-2" />
+                          Approve Final (Paroki)
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
+
 
             </div>
           </div>
@@ -516,3 +629,7 @@ export function VerifikasiDetailModal({
     </>
   );
 }
+
+
+
+

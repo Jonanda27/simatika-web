@@ -21,7 +21,7 @@ export default function MapDisplay({ lat, lng }: MapDisplayProps) {
   }, []);
 
   return (
-    <div className="w-full h-full min-h-[300px] sm:min-h-[400px] relative rounded-xl overflow-hidden z-10 border border-slate-200">
+    <div className="w-full h-full min-h-[300px] sm:min-h-[400px] relative rounded-none overflow-hidden z-10 border border-slate-200">
       <MapContainer 
         center={[lat, lng]} 
         zoom={16} 
@@ -37,3 +37,4 @@ export default function MapDisplay({ lat, lng }: MapDisplayProps) {
     </div>
   );
 }
+

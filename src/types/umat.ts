@@ -6,6 +6,7 @@ export interface UmatSacrament {
   tempat_pelaksanaan: string | null;
   nama_pastor: string | null;
   nama_wali_saksi: string | null;
+  sertifikat_url?: string | null;
 }
 
 export interface UmatMutation {
@@ -25,6 +26,7 @@ export interface UmatChurchActivity {
 
 export interface UmatData {
   id: string;
+  nomor_induk_umat?: string | null;
   nama_lengkap: string;
   fam: string | null;
   tempat_lahir: string | null;

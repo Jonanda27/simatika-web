@@ -67,7 +67,7 @@ export const StyledSelect = ({ value, onChange, options, placeholder, icon: Icon
     <div className="relative">
       <div 
         ref={triggerRef}
-        className="flex h-10 w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-sm cursor-pointer hover:border-slate-300 transition-colors"
+        className="flex h-10 w-full items-center justify-between rounded-none border border-slate-200 bg-white px-3 py-2 text-sm cursor-pointer hover:border-slate-300 transition-colors"
         onClick={() => setIsOpen(!isOpen)}
       >
         <div className="flex items-center gap-2 truncate">
@@ -89,9 +89,9 @@ export const StyledSelect = ({ value, onChange, options, placeholder, icon: Icon
             width: `${coords.width}px`,
             zIndex: 9999,
           }}
-          className="rounded-md border border-slate-200 bg-white shadow-lg overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+          className="rounded-none border border-slate-200 bg-white shadow-lg overflow-hidden animate-in fade-in zoom-in-95 duration-100"
         >
-          <div className="max-h-60 overflow-y-auto p-1 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+          <div className="max-h-[116px] overflow-y-auto p-1 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
             {options.map((opt) => (
               <div
                 key={opt}
@@ -111,3 +111,4 @@ export const StyledSelect = ({ value, onChange, options, placeholder, icon: Icon
     </div>
   );
 };
+

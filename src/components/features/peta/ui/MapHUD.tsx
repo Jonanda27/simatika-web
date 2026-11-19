@@ -5,9 +5,11 @@ import React from "react";
 import { Plus, Minus, Maximize, Map as MapIcon } from "lucide-react";
 import { useGisUmatStore } from "@/store/useGisUmatStore";
 import { cn } from "@/lib/utils";
+import { usePathname } from "next/navigation";
 
 export default function MapHUD() {
     const { markerMode } = useGisUmatStore();
+    const pathname = usePathname();
 
     // Custom events untuk dilempar ke mesin Leaflet
     const triggerZoomIn = () => window.dispatchEvent(new Event('map-zoom-in'));
@@ -15,7 +17,7 @@ export default function MapHUD() {
     const triggerResetView = () => window.dispatchEvent(new Event('map-reset-view'));
 
     // Logic Penyusunan Isi Legenda berdasarkan Mode
-    type LegendItem = { label: string; color: string };
+    type LegendItem = { label: string; color: string; shapeClass?: string };
     let legendItems: LegendItem[] = [];
 
     if (markerMode === "ekonomi") {
@@ -32,8 +34,11 @@ export default function MapHUD() {
         ];
     } else {
         legendItems = [
-            { label: "Titik Rumah Umat/Keluarga", color: "bg-brown-500 border-brown-200" }
+            { label: "Keluarga Menetap di Stasi", color: "bg-yellow-400 border-yellow-200", shapeClass: "rounded-full" }
         ];
+        if (pathname !== "/peta-stasi") {
+            legendItems.push({ label: "Keluarga Langsung Paroki (Tanpa Stasi)", color: "bg-slate-500 border-slate-400 scale-75", shapeClass: "rounded-sm rotate-45" });
+        }
     }
 
     return (
@@ -55,7 +60,7 @@ export default function MapHUD() {
                     {legendItems.map((item, idx) => (
                         <div key={idx} className="flex items-center gap-3 px-3 py-2 border-b border-slate-100 last:border-0">
                             <div className="relative w-3 h-3 shrink-0 flex items-center justify-center">
-                                <div className={cn("relative w-full h-full shadow-sm rounded-full border-2", item.color)} />
+                                <div className={cn("relative w-full h-full shadow-sm border-2", item.shapeClass || "rounded-full", item.color)} />
                             </div>
                             <span className="text-[10px] font-bold text-slate-600 tracking-tight leading-none text-left">
                                 {item.label}

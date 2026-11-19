@@ -2,18 +2,25 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Save, AlertCircle } from "lucide-react";
+import { Save, AlertCircle, UserPlus, GitBranch } from "lucide-react";
 import { StepIdentitas } from "./components/StepIdentitas";
 import { StepFasilitas } from "./components/StepFasilitas";
 import { StepAnggota } from "./components/StepAnggota";
+import { SearchUmatModal } from "./components/SearchUmatModal";
 import { api } from "@/lib/api";
 import { useDrafts } from "@/hooks/useDrafts";
 import { FamilyFormData } from "@/types/family";
+import { UmatData } from "@/types/umat";
+import { keluargaService } from "@/services/keluarga.service";
 
 export default function PendataanPage() {
   const [activeStep, setActiveStep] = useState(1);
   const [draftId, setDraftId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<FamilyFormData>({
+  const [resubmitId, setResubmitId] = useState<string | null>(null);
+  const [isPecahKkMode, setIsPecahKkMode] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
+
+  const [formData, setFormData] = useState<FamilyFormData & { type?: string }>({
     no_kk_paroki: "",
     status_numpang: "",
     lat: null,
@@ -34,12 +41,13 @@ export default function PendataanPage() {
   const { drafts, deleteDraft } = useDrafts();
 
   useEffect(() => {
-    // Membaca draftId dari URL
     const params = new URLSearchParams(window.location.search);
-    const id = params.get('draftId');
-    if (id) {
-      setDraftId(id);
-      const found = drafts.find((d: any) => d.id === id);
+    const dId = params.get('draftId');
+    const rId = params.get('resubmitId');
+
+    if (dId) {
+      setDraftId(dId);
+      const found = drafts.find((d: any) => d.id === dId);
       if (found && found.data) {
         const loadedData = { ...found.data };
         if (loadedData.anggota && !loadedData.members) {
@@ -47,11 +55,92 @@ export default function PendataanPage() {
         }
         setFormData((prev) => ({ ...prev, ...loadedData }));
       }
+    } else if (rId) {
+      setResubmitId(rId);
+      // Fetch data from backend for resubmission
+      api.get(`/verification/${rId}`).then((res) => {
+        if (res.data && res.data.payload_data) {
+          const loadedData = res.data.payload_data;
+          // Set preview image if exists
+          if (loadedData.foto_rumah_url) {
+            loadedData.foto_rumah_path = loadedData.foto_rumah_url;
+          }
+          if (loadedData.kk_url) {
+            loadedData.kk_url_path = loadedData.kk_url;
+          }
+          if (loadedData.type === 'PECAH_KK') {
+            setIsPecahKkMode(true);
+          }
+          setFormData((prev) => ({ ...prev, ...loadedData }));
+        }
+      }).catch(err => {
+        console.error("Gagal memuat data resubmit:", err);
+        setError("Gagal memuat data yang akan diperbaiki.");
+      });
+    }
+
+    const uId = params.get('updateFamilyId');
+    if (uId) {
+      keluargaService.getById(uId).then((res) => {
+        if (res.data) {
+          const family = res.data;
+          const members = (family.Umats || []).map((u: any) => ({
+            existing_umat_id: u.id,
+            nama_lengkap: u.nama_lengkap,
+            tempat_lahir: u.tempat_lahir,
+            tanggal_lahir: u.tanggal_lahir,
+            jenis_kelamin: u.jenis_kelamin === 'L' ? 'Laki-Laki' : 'Perempuan',
+            status_dalam_keluarga: u.status_dalam_keluarga,
+            pekerjaan: u.pekerjaan,
+            pendidikan_terakhir: u.pendidikan_terakhir,
+            suku: u.suku,
+            status_kesehatan: u.status_kesehatan
+          }));
+
+          setFormData((prev) => ({
+            ...prev,
+            type: 'UPDATE_KELUARGA',
+            existing_family_id: family.id,
+            no_kk_paroki: family.no_kk_paroki || "",
+            status_rumah: family.status_rumah || "",
+            fasilitas_kamar_mandi: !!family.fasilitas_kamar_mandi,
+            fasilitas_kamar_cuci: !!family.fasilitas_kamar_cuci,
+            fasilitas_wc: !!family.fasilitas_wc,
+            lat: family.latitude || null,
+            lng: family.longitude || null,
+            foto_rumah_path: family.foto_rumah_url || null,
+            kk_url_path: family.kk_url || null,
+            members
+          } as any));
+        }
+      }).catch(err => {
+        console.error("Gagal memuat data keluarga:", err);
+        setError("Gagal memuat data keluarga yang akan diupdate.");
+      });
     }
   }, [drafts]);
 
   const updateField = (field: keyof FamilyFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSelectUmat = (umat: UmatData) => {
+    setIsPecahKkMode(true);
+    setFormData(prev => ({
+      ...prev,
+      type: 'PECAH_KK',
+      members: [{
+        existing_umat_id: umat.id,
+        nama_lengkap: umat.nama_lengkap,
+        tempat_lahir: umat.tempat_lahir,
+        tanggal_lahir: umat.tanggal_lahir,
+        jenis_kelamin: umat.jenis_kelamin === 'L' ? 'Laki-Laki' : 'Perempuan',
+        status_dalam_keluarga: "KK",
+        pendidikan_terakhir: umat.pendidikan_terakhir,
+        pekerjaan: umat.pekerjaan,
+        is_katolik: true
+      } as any]
+    }));
   };
 
   const handleSave = async () => {
@@ -72,16 +161,21 @@ export default function PendataanPage() {
       if (formData.foto_rumah_file) {
         dataToSend.append("foto_rumah", formData.foto_rumah_file);
       } else if (!formData.foto_rumah_path) {
-        // Jika tidak ada file baru dan tidak ada preview
         return setError("Foto Rumah wajib diunggah!");
       }
 
+      if (formData.file_kk) {
+        dataToSend.append("file_kk", formData.file_kk);
+      }
+
       // Buat payload JSON dari formData (kecuali file)
-      const payloadObj = JSON.parse(JSON.stringify(formData)); // Deep copy sederhana
+      const payloadObj = JSON.parse(JSON.stringify(formData));
       
-      // Bersihkan properti file foto rumah
+      // Bersihkan properti file
       delete payloadObj.foto_rumah_file;
       delete payloadObj.foto_rumah_path;
+      delete payloadObj.file_kk;
+      delete payloadObj.kk_url_path;
 
       // Sisipkan file sertifikat anggota ke FormData & hapus dari JSON payload
       if (payloadObj.members && payloadObj.members.length > 0) {
@@ -93,7 +187,6 @@ export default function PendataanPage() {
             if (file) {
               dataToSend.append(`sertifikat_${sakramen}_${index}`, file);
             }
-            // Hapus referensi file agar tidak terbawa ke JSON text
             delete member[fileKey];
           });
         });
@@ -101,10 +194,14 @@ export default function PendataanPage() {
 
       dataToSend.append("payload", JSON.stringify(payloadObj));
 
-      // Kirim ke API backend
-      await api.post("/sync", dataToSend);
-
-      alert("Sensus Keluarga Berhasil Disimpan ke Database!");
+      // Jika resubmit, gunakan PUT /sync/:id, else POST /sync
+      if (resubmitId) {
+        await api.put(`/sync/${resubmitId}`, dataToSend);
+        alert("Data Sensus Berhasil Diperbarui dan dikirim ulang!");
+      } else {
+        await api.post("/sync", dataToSend);
+        alert(isPecahKkMode ? "Pengajuan Pecah KK Berhasil Disimpan ke Database!" : "Sensus Keluarga Berhasil Disimpan ke Database!");
+      }
       
       // Hapus dari draft lokal jika berasal dari draft
       if (draftId) {
@@ -125,8 +222,11 @@ export default function PendataanPage() {
         status_rumah: "",
         pendapatan_per_bulan: "",
         asuransi_kesehatan: "",
+        kk_url_path: null,
+        file_kk: null,
         members: []
       });
+      setIsPecahKkMode(false);
     } catch (err: any) {
       setError(err.message || "Terjadi kesalahan saat menyimpan data.");
     } finally {
@@ -135,35 +235,25 @@ export default function PendataanPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50">
-      {/* Header Sticky */}
-      <div className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 px-6 py-5 flex items-center justify-between sticky top-0 z-20 shadow-sm">
-        <div className="flex flex-col">
-          <h1 className="text-xl font-bold text-slate-800">Pendataan Umat</h1>
-          <p className="text-sm text-slate-500">Input Data Sensus Keluarga (Ketua KBG)</p>
-        </div>
-        <div>
-          <Button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="bg-brown-600 hover:bg-brown-700 text-white shadow-md shadow-brown-900/20 px-6"
-          >
-            {isSaving ? (
-              <div className="h-5 w-5 rounded-full border-2 border-white/30 border-t-white animate-spin mr-2" />
-            ) : (
-              <Save className="h-4 w-4 mr-2" />
-            )}
-            Simpan & Kirim
-          </Button>
-        </div>
-      </div>
+    <div className="flex flex-col min-h-[calc(100vh-2rem)] bg-transparent relative">
+      
 
       {/* Main Content Area */}
       <div className="flex-1 p-6 max-w-7xl mx-auto w-full">
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center gap-3">
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-none flex items-center gap-3">
             <AlertCircle className="h-5 w-5" />
             <span className="font-medium">{error}</span>
+          </div>
+        )}
+
+        {isPecahKkMode && !resubmitId && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 text-blue-800 rounded-none flex flex-col gap-1">
+            <span className="font-bold flex items-center gap-2">
+              <GitBranch className="h-5 w-5" />
+              Mode Pecah KK Aktif
+            </span>
+            <span className="text-sm">Anda sedang membuat KK baru berdasarkan data umat yang telah terdaftar. Lengkapi data rumah tangga baru di bawah ini.</span>
           </div>
         )}
 
@@ -178,13 +268,46 @@ export default function PendataanPage() {
 
           {/* Kolom Kanan: Anggota Keluarga */}
           <div className="xl:col-span-2">
-            <div className="bg-white rounded-md shadow-sm border border-slate-200 p-8 h-full min-h-[600px] ring-1 ring-slate-900/5">
-              <StepAnggota data={formData} updateField={updateField} />
+            <div className="bg-white rounded-none border border-slate-200/80 p-6 sm:p-8 h-full min-h-[600px]">
+              <StepAnggota data={formData as any} updateField={updateField} />
             </div>
           </div>
 
         </div>
+
+        {/* Floating Action Buttons di Bawah */}
+        <div className="mt-8 flex justify-end gap-4 border-t border-slate-200/60 pt-6">
+          {!resubmitId && !isPecahKkMode && (
+            <Button
+              variant="outline"
+              onClick={() => setShowSearchModal(true)}
+              className="text-brown-700 border-brown-300 hover:bg-brown-50 rounded-none h-12 px-6"
+            >
+              <GitBranch className="h-5 w-5 mr-2" />
+              Pecah KK (Pilih Umat)
+            </Button>
+          )}
+          <Button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="bg-gradient-to-r from-brown-600 to-brown-700 hover:from-brown-700 hover:to-brown-800 text-white   px-8 h-12 rounded-none font-bold text-lg transition-all hover:scale-[1.02] active:scale-[0.98]"
+          >
+            {isSaving ? (
+              <div className="h-5 w-5 rounded-full border-2 border-white/30 border-t-white animate-spin mr-2" />
+            ) : (
+              <Save className="h-5 w-5 mr-2" />
+            )}
+            Simpan & Kirim
+          </Button>
+        </div>
       </div>
+
+      <SearchUmatModal 
+        open={showSearchModal} 
+        onOpenChange={setShowSearchModal}
+        onSelectUmat={handleSelectUmat}
+      />
     </div>
   );
 }
+

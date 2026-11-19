@@ -25,6 +25,15 @@ class AuthService {
     }
     return null;
   }
+
+  async getMe(): Promise<{ success: boolean; user: any }> {
+    try {
+      return await api.get<{ success: boolean; user: any }>('/auth/me');
+    } catch (error: any) {
+      console.error('AuthService getMe error:', error);
+      throw error;
+    }
+  }
 }
 
 export const authService = new AuthService();

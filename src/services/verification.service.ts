@@ -8,6 +8,14 @@ class VerificationService {
     return api.get(url);
   }
 
+  async getMySubmissions(): Promise<{ success: boolean; data: VerificationData[] }> {
+    return api.get('/verification/my-submissions');
+  }
+
+  async getById(id: string): Promise<{ success: boolean; data: VerificationData }> {
+    return api.get(`/verification/${id}`);
+  }
+
   async verifyStasi(id: string): Promise<{ success: boolean; message: string }> {
     return api.post(`/verification/${id}/verify-stasi`);
   }

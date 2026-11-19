@@ -8,7 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { authService } from "@/services/auth.service";
 import Image from "next/image";
+import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { ArrowLeft } from "lucide-react";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -64,8 +66,13 @@ export default function LoginPage() {
         {/* Left Side: Pure Minimalist Form */}
         <div className="w-full lg:w-1/2 p-12 sm:p-16 flex flex-col justify-between bg-white relative">
           <div>
+            <Link href="/" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-brown-600 transition-colors mb-8">
+              <ArrowLeft className="w-4 h-4" />
+              Kembali ke Beranda
+            </Link>
+
             {/* Branding Header */}
-            <div className="flex items-center gap-3.5 mb-14">
+            <div className="flex items-center gap-3.5 mb-6">
               <div className="relative w-14 h-14 rounded-2xl overflow-hidden shadow-sm">
                  <Image src="/logo.png" alt="Logo" fill className="object-contain drop-shadow-sm" priority />
               </div>
@@ -178,3 +185,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

@@ -34,7 +34,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (storedUser && storedToken) {
         try {
-          setUser(JSON.parse(storedUser));
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+          
+          // Silent refresh from server to get updated fields like id_kbg
+          authService.getMe().then(res => {
+            if (res.success && res.user) {
+              // Update local storage and state silently
+              localStorage.setItem("user", JSON.stringify(res.user));
+              setUser(res.user);
+            }
+          }).catch(e => console.error("Silent refresh failed", e));
         } catch (e) {
           console.error("Failed to parse user from local storage");
           authService.logout();
@@ -82,3 +92,4 @@ export function useAuth() {
   }
   return context;
 }
+

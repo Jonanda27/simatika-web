@@ -14,4 +14,22 @@ export interface DashboardStats {
     name: string;
     umat: number;
   }[];
+  statistikMutasi: {
+    name: string;
+    value: number;
+    color: string;
+  }[];
+  keaktifanPastoral: {
+    name: string;
+    value: number;
+    color: string;
+  }[];
+  petaSebaran: {
+    id: string;
+    name: string;
+    lat: number;
+    lng: number;
+    is_family?: boolean;
+    has_stasi?: boolean;
+  }[];
 }

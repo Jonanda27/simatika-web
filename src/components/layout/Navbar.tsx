@@ -29,8 +29,12 @@ export function Navbar({ title, onMenuClick, onDesktopMenuClick }: NavbarProps) 
   let roleLabel = "Admin";
   if (user?.role === 'ADMIN_PAROKI' || user?.role === 'Admin Paroki') {
     roleLabel = "Admin Paroki";
+  } else if (user?.role === 'ADMIN_GEREJA' || user?.role === 'Admin Gereja') {
+    roleLabel = "Admin Gereja";
   } else if (user?.role === 'ADMIN_STASI' || user?.role === 'Admin Stasi') {
     roleLabel = "Admin Stasi";
+  } else if (user?.role === 'KETUA_KBG' || user?.role === 'Ketua KBG') {
+    roleLabel = "Ketua KBG";
   } else if (user?.role) {
     roleLabel = user.role;
   }
@@ -75,7 +79,7 @@ export function Navbar({ title, onMenuClick, onDesktopMenuClick }: NavbarProps) 
         
         <div className="flex flex-col">
           <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
-            {title || "Dashboard Admin SIMATIKA"}
+            {title !== undefined ? title : "Dashboard Admin SIMATIKA"}
           </h1>
         </div>
       </div>
@@ -144,3 +148,4 @@ export function Navbar({ title, onMenuClick, onDesktopMenuClick }: NavbarProps) 
     </header>
   );
 }
+

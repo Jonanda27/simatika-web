@@ -53,14 +53,14 @@ export function StepAnggota({ data, updateField }: Props) {
           <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">Daftar Anggota Keluarga</h2>
           <p className="text-slate-500 mt-1">Total {members.length} Orang Terdata</p>
         </div>
-        <div className="p-3 bg-gradient-to-br from-brown-100 to-brown-200 rounded-md text-brown-700 shadow-sm border border-brown-200/50">
+        <div className="p-3 bg-gradient-to-br from-brown-100 to-brown-200 rounded-none text-brown-700  border border-brown-200/50">
           <Users className="h-7 w-7" />
         </div>
       </div>
 
       {members.length === 0 ? (
-        <div className="border-2 border-dashed border-slate-200/80 rounded-md p-16 flex flex-col items-center justify-center bg-slate-50/50 text-center">
-          <div className="p-5 bg-white shadow-sm border border-slate-100 rounded-full mb-6">
+        <div className="border-2 border-dashed border-slate-200/80 rounded-none p-16 flex flex-col items-center justify-center bg-slate-50/50 text-center">
+          <div className="p-5 bg-white  border border-slate-100 rounded-none mb-6">
             <Users className="h-10 w-10 text-slate-300" />
           </div>
           <h3 className="text-lg text-slate-700 font-bold mb-2">Belum Ada Data Anggota</h3>
@@ -69,7 +69,7 @@ export function StepAnggota({ data, updateField }: Props) {
           </p>
           <Button
             onClick={() => handleOpenModal()}
-            className="bg-brown-600 hover:bg-brown-700 text-white rounded-full px-8 py-6 shadow-md shadow-brown-900/20 text-md font-semibold transition-transform active:scale-95"
+            className="bg-brown-600 hover:bg-brown-700 text-white rounded-none px-8 py-6   text-md font-semibold transition-transform active:scale-95"
           >
             <UserPlus className="h-5 w-5 mr-3" />
             Tambah Anggota
@@ -80,10 +80,10 @@ export function StepAnggota({ data, updateField }: Props) {
           {members.map((member: FamilyMember, index: number) => (
             <div
               key={index}
-              className="bg-white border border-slate-200/80 rounded-md p-5 flex items-center justify-between hover:shadow-md hover:border-slate-300 transition-all group"
+              className="bg-white border border-slate-200/80 rounded-none p-5 flex items-center justify-between hover: hover:border-slate-300 transition-all group"
             >
               <div className="flex items-center gap-5">
-                <div className="p-4 bg-brown-50 rounded-xl text-brown-600 group-hover:bg-brown-100 transition-colors">
+                <div className="p-4 bg-brown-50 rounded-none text-brown-600 group-hover:bg-brown-100 transition-colors">
                   <Users className="h-6 w-6" />
                 </div>
                 <div>
@@ -115,7 +115,7 @@ export function StepAnggota({ data, updateField }: Props) {
           <Button
             onClick={() => handleOpenModal()}
             variant="outline"
-            className="w-full mt-6 border-brown-300 border-dashed text-brown-700 hover:bg-brown-50 h-16 rounded-md text-md font-semibold bg-transparent"
+            className="w-full mt-6 border-brown-300 border-dashed text-brown-700 hover:bg-brown-50 h-16 rounded-none text-md font-semibold bg-transparent"
           >
             <UserPlus className="h-5 w-5 mr-3" />
             Tambah Anggota Baru
@@ -133,3 +133,4 @@ export function StepAnggota({ data, updateField }: Props) {
     </div>
   );
 }
+
